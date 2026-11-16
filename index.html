@@ -45,10 +45,8 @@
             justify-content: center;
         }
 
-        @media (orientation: portrait) and (pointer: coarse) {
-            #rotate {
-                display: flex;
-            }
+        #rotate {
+            display: none !important;
         }
 
         #wrap {
@@ -2156,7 +2154,7 @@
         const fCur = [null, null];
 
         function syncFields() {
-            const cfg = [fa, fb], r = c.getBoundingClientRect(), k = r.width / W;
+            const cfg = [fa, fb], k = c.offsetWidth / W;
             for (let i = 0; i < 2; i++) {
                 const el = fEl[i], f = cfg[i];
                 if (!f) {
@@ -2214,8 +2212,23 @@
         }
 
         requestAnimationFrame(loop);
+        let rot = false;
         function fit() {
-            const s = Math.max(.5, Math.min(innerWidth / W, innerHeight / H));
+            rot = matchMedia('(pointer: coarse)').matches && innerHeight > innerWidth;
+            const vw = rot ? innerHeight : innerWidth, vh = rot ? innerWidth : innerHeight;
+            const s = Math.max(.5, Math.min(vw / W, vh / H));
+            const ws = document.getElementById('wrap').style;
+            if (rot) {
+                ws.position = 'fixed';
+                ws.left = '50%';
+                ws.top = '50%';
+                ws.transform = 'translate(-50%,-50%) rotate(90deg)';
+            } else {
+                ws.position = '';
+                ws.left = '';
+                ws.top = '';
+                ws.transform = '';
+            }
             c.style.width = W * s + 'px';
             c.style.height = H * s + 'px';
             ov.style.width = W * s + 'px';
@@ -2226,6 +2239,7 @@
         }
 
         addEventListener('resize', fit);
+        addEventListener('orientationchange', () => setTimeout(fit, 150));
         fit();
         // Phones: first tap anywhere goes fullscreen and locks landscape (Android Chrome)
         if (matchMedia('(pointer: coarse)').matches) {
@@ -2239,6 +2253,11 @@
         }
         const pos = e => {
             const r = c.getBoundingClientRect();
+            if (rot) {
+                const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+                const cw = c.offsetWidth, ch = c.offsetHeight;
+                return { x: (dy + cw / 2) / cw * W, y: (-dx + ch / 2) / ch * H };
+            }
             return {
                 x: (e.clientX - r.left) / r.width * W,
                 y: (e.clientY - r.top) / r.height * H
