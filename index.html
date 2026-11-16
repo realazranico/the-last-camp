@@ -1,0 +1,2345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <title>The Last Camp</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Creepster&family=Pixelify+Sans:wght@500;700&display=swap">
+    <style>
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #rotate {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 10;
+            background: #000;
+            color: #e8dcb0;
+            font: bold 6vw sans-serif;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (orientation: portrait) and (pointer: coarse) {
+            #rotate {
+                display: flex;
+            }
+        }
+
+        #wrap {
+            position: relative;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            display: block;
+        }
+
+        #ov {
+            position: absolute;
+            left: 0;
+            top: 0;
+            pointer-events: none;
+            image-rendering: auto;
+        }
+        .fld{position:absolute;display:none;z-index:5;box-sizing:border-box;background:#100808;color:#fff;border:1px solid #a05030;text-align:center;outline:none;font-family:"Courier New",Courier,monospace;font-weight:700;user-select:text;-webkit-user-select:text;padding:0;border-radius:0}
+        .fld:focus{border-color:#ffb060;box-shadow:0 0 8px rgba(255,150,60,.6)}
+    </style>
+</head>
+<body>
+    <div id="rotate">Rotate your phone<br>to play (landscape)</div>
+    <div id="wrap">
+        <canvas id="c" width="320" height="180"></canvas>
+        <canvas id="ov"></canvas>
+        <input id="fa" class="fld" type="text" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
+        <input id="fb" class="fld" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+    </div>
+    <script>
+        const W = 320;
+        const H = 180;
+        const T = 16;
+        const MW = 64;
+        const MH = 48;
+        const CX = MW * T / 2;
+        const CY = MH * T / 2;
+        const RXp = CX - 34;
+        const RYp = CY + 2;
+        const c = document.getElementById('c');
+        const g = c.getContext('2d');
+        const dk = document.createElement('canvas');
+        dk.width = W;
+        dk.height = H;
+        const d = dk.getContext('2d');
+        const NAMES = ['RICO', 'DRACO', 'PERCIVAL', 'ZACHARY'];
+        const SH = ['#d9534f', '#3b9ae1', '#f0ad4e', '#9b59b6'];
+        const MHP = [4, 12, 6, 4];
+        const MSP = [40, 22, 34, 28];
+        const ld = n => {
+            const i = new Image();
+            i.onerror = () => {
+                i.onerror = null;
+                if (ART[n]) i.src = ART[n];
+            };
+            i.src = 'assets/' + n + '.png';
+            return i;
+        };
+        const ok = i => i.complete && i.naturalWidth > 0;
+        const spr = NAMES.map(ld);
+        const vspr = ['MANANANGGAL', 'KAPRE', 'TIKBALANG', 'MULTO'].map(ld);
+        const LORE = [
+            '1994|Students camp deep in the cursed Sierra Madre.',
+            'Night fell too early.|The forest swallowed all the light.',
+            'Their vehicles suddenly died.|There was no way out of the wilderness.',
+            'One by one, friends vanished|into the dark. No scream. No warning.',
+            'Manananggal. Kapre. Tikbalang. Multo.|They are hunting you now.',
+            'Survive until sunrise...|or repair the emergency military radio.'
+        ];
+        const TIPS = [
+            'Keep the fire burning. Monsters fear it.',
+            'Wood builds shelters. Batteries repair the radio.',
+            'Your flashlight is always in your bag.',
+            'Slash with SPACE. Dash with SHIFT. Build with B.'
+        ];
+        const MSND = ['screech', 'rumble', 'neigh', 'whisper'];
+        const SHEL_COST = 6;
+        const SHEL_MAX = 12;
+        let stepT = 0;
+        let beastPg = 0, beastGo = null, beastPre = false, srvVal = '', srvAsk = false, joinCode = '', netTry = 0, swipeX = null, lastCh = -1, chv = 0, ldt = .016, fa = null, fb = null, mmC = null;
+        const BEAST = [
+            { n: 'MANANANGGAL', a: 'The Winged Torso', i: ['Splits at the waist and flies at night.', 'Glides over trees and walls.', 'Wobbles in the air: time your slash.'], tip: 'Stay by the fire. It will not cross it.' },
+            { n: 'KAPRE', a: 'The Tree Giant', i: ['A huge smoker that waits in the trees.', 'Very slow, but very tough.', 'Hits for 2 hearts. Do not trade blows.'], tip: 'Kite it around trees, then slash.' },
+            { n: 'TIKBALANG', a: 'The Horse Demon', i: ['Half horse, half man. Tricks travelers.', 'Charges in sudden bursts of speed.', 'Hits for 2 hearts.'], tip: 'DASH sideways when it charges.' },
+            { n: 'MULTO', a: 'The Wandering Ghost', i: ['A pale spirit that floats in and out.', 'Passes straight through trees.', 'Fades in and out of sight.'], tip: 'Shelters and fire push it back.' }
+        ];
+        let mobSndT = 0;
+        let shel = [];
+        let st = 'title';
+        let stT = 0;
+        let gt = 0;
+        let mode = 0;
+        let ch = 0;
+        let btns = [];
+        let keys = {};
+        let joy = null;
+        let panel = 0;
+        let musicVol = .6;
+        let sfxVol = 1;
+        let playerName = '';
+        let instrPage = 0;
+        let instrReturn = 'mode';
+        let nameReturn = 'lore';
+        let nameMsg = '';
+        let endTitle = '';
+        let died = false;
+        let sfxGain = null;
+        let musicGain = null;
+        let musicTimer = null;
+        let musicPad = [];
+        let musicStep = 0;
+        let touchOn = typeof matchMedia == 'function' && matchMedia('(pointer: coarse)').matches;
+        let fullTried = false;
+        const lit = {};
+        let toast = '';
+        let toastT = 0;
+        let savedT = 0;
+        let msg = '';
+        let win = false;
+        let map;
+        let res;
+        let mobs;
+        let pl;
+        let me;
+        let wood;
+        let scrap;
+        let radio;
+        let fire;
+        let tl;
+        let spT;
+        let saveT;
+        let nid = 1;
+        let myId = 0;
+        let hostF = false;
+        let ws = null;
+        let joined = 0;
+        let code = "";
+        let netMsg = "";
+        let netT = 0;
+        let nP = 2;
+        let flash = true;
+        let ac;
+        const cleanName = s => String(s || '').replace(/[^A-Za-z0-9 ]/g, '').trim().slice(0, 12).trim();
+        const shownName = () => cleanName(playerName) || 'PLAYER';
+        const encName = n => n ? n.replace(/ /g, '_') : '-';
+        const decName = n => n == '-' ? '' : n.replace(/_/g, ' ');
+        const unit = (v, d) => v === null || v === undefined || isNaN(+v) ? d : Math.max(0, Math.min(1, +v));
+
+        function loadPrefs() {
+            try {
+                const p = JSON.parse(localStorage.getItem('lcprefs'));
+                if (p) {
+                    playerName = cleanName(p.name);
+                    musicVol = unit(p.music, .6);
+                    sfxVol = unit(p.sfx, 1);
+                }
+            } catch (e) {}
+        }
+
+        function savePrefs() {
+            try {
+                localStorage.setItem('lcprefs', JSON.stringify({ name: cleanName(playerName), music: musicVol, sfx: sfxVol }));
+            } catch (e) {}
+        }
+
+        loadPrefs();
+        try { srvVal = localStorage.getItem('lcserver2') || ''; } catch (e) {}
+        srvAsk = !location.protocol.startsWith('http');
+
+        function audioCtx() {
+            ac = ac || new(window.AudioContext || window.webkitAudioContext)();
+            if (ac.state == 'suspended') ac.resume();
+            return ac;
+        }
+
+        function sfxBus() {
+            if (!sfxGain || sfxGain.context !== ac) {
+                sfxGain = ac.createGain();
+                sfxGain.gain.value = sfxVol;
+                sfxGain.connect(ac.destination);
+            }
+            return sfxGain;
+        }
+
+        const MNOTES = [220.00, 261.63, 329.63, 293.66, 246.94, 261.63, 196.00, 233.08];
+
+        function musicNote() {
+            const f = MNOTES[musicStep++ % 8];
+            const t = ac.currentTime;
+            [[1, .5], [2.005, .15]].forEach(([m, v]) => {
+                const o = ac.createOscillator();
+                const gn = ac.createGain();
+                o.type = 'sine';
+                o.frequency.value = f * m;
+                gn.gain.setValueAtTime(0, t);
+                gn.gain.linearRampToValueAtTime(v, t + .05);
+                gn.gain.exponentialRampToValueAtTime(.001, t + 2);
+                o.connect(gn).connect(musicGain);
+                o.start(t);
+                o.stop(t + 2.1);
+            });
+        }
+
+        function startMusic() {
+            if (musicVol <= 0) return;
+            try {
+                audioCtx();
+                if (musicTimer) return;
+                if (!musicGain || musicGain.context !== ac) {
+                    musicGain = ac.createGain();
+                    musicGain.connect(ac.destination);
+                }
+                musicGain.gain.value = musicVol * .6;
+                musicPad = [[55, .35], [82.5, .2]].map(([f, v]) => {
+                    const o = ac.createOscillator();
+                    const gn = ac.createGain();
+                    o.type = 'sine';
+                    o.frequency.value = f;
+                    gn.gain.value = v;
+                    o.connect(gn).connect(musicGain);
+                    o.start();
+                    return o;
+                });
+                musicNote();
+                musicTimer = setInterval(musicNote, 2000);
+            } catch (e) {}
+        }
+
+        function stopMusic() {
+            clearInterval(musicTimer);
+            musicTimer = null;
+            musicPad.forEach(o => {
+                try {
+                    o.stop();
+                } catch (e) {}
+            });
+            musicPad = [];
+        }
+
+        function setMusicVol(v) {
+            musicVol = Math.max(0, Math.min(1, Math.round(v * 10) / 10));
+            if (musicVol <= 0) stopMusic();
+            else if (musicGain && musicTimer) musicGain.gain.value = musicVol * .6;
+            else startMusic();
+            savePrefs();
+        }
+
+        function setSfxVol(v) {
+            sfxVol = Math.max(0, Math.min(1, Math.round(v * 10) / 10));
+            if (sfxGain) sfxGain.gain.value = sfxVol;
+            savePrefs();
+            snd(700, .1, 'sine', .2, 950);
+        }
+
+        function goFull() {
+            const e = document.documentElement;
+            if (!document.fullscreenElement && e.requestFullscreen) {
+                e.requestFullscreen().then(() => {
+                    try {
+                        screen.orientation.lock('landscape').catch(() => {});
+                    } catch (x) {}
+                }).catch(() => {});
+            }
+        }
+
+        function snd(f, du, ty = 'square', v = .15, f2 = f) {
+            if (sfxVol <= 0) return;
+            try {
+                ac = ac || new(window.AudioContext || window.webkitAudioContext)();
+                const o = ac.createOscillator();
+                const gn = ac.createGain();
+                o.type = ty;
+                o.frequency.setValueAtTime(f, ac.currentTime);
+                o.frequency.linearRampToValueAtTime(f2, ac.currentTime + du);
+                gn.gain.setValueAtTime(v, ac.currentTime);
+                gn.gain.linearRampToValueAtTime(0, ac.currentTime + du);
+                o.connect(gn).connect(sfxBus());
+                o.start();
+                o.stop(ac.currentTime + du);
+            } catch (e) {}
+        }
+
+        function nz(du, v = .2, lp = 3000) {
+            if (sfxVol <= 0) return;
+            try {
+                ac = ac || new(window.AudioContext || window.webkitAudioContext)();
+                const n = Math.floor(ac.sampleRate * du);
+                const b = ac.createBuffer(1, n, ac.sampleRate);
+                const d = b.getChannelData(0);
+                for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+                const s = ac.createBufferSource();
+                const f = ac.createBiquadFilter();
+                const gn = ac.createGain();
+                f.type = 'lowpass';
+                f.frequency.value = lp;
+                gn.gain.value = v;
+                s.buffer = b;
+                s.connect(f).connect(gn).connect(sfxBus());
+                s.start();
+            } catch (e) {}
+        }
+
+        function sfx(n, v = 1) {
+            switch (n) {
+                case 'step': nz(.05, .25 * v, 900);
+                break;
+                case 'chop': nz(.05, .5 * v, 2500);
+                snd(170, .1, 'square', .4 * v, 85);
+                break;
+                case 'scrap': snd(1800, .05, 'sine', .3 * v, 1500);
+                nz(.06, .2 * v, 6000);
+                setTimeout(() => snd(1100, .09, 'sine', .25 * v, 900), 60);
+                break;
+                case 'build': snd(120, .08, 'square', .4 * v, 70);
+                setTimeout(() => snd(140, .08, 'square', .4 * v, 80), 130);
+                nz(.1, .2 * v, 2000);
+                break;
+                case 'break': nz(.35, .5 * v, 1500);
+                snd(200, .3, 'square', .3 * v, 60);
+                break;
+                case 'radio': nz(.15, .18 * v, 5000);
+                setTimeout(() => snd(880, .08, 'square', .2 * v), 160);
+                setTimeout(() => snd(1320, .08, 'square', .2 * v), 270);
+                break;
+                case 'screech': snd(1100, .35, 'sawtooth', .22 * v, 350);
+                setTimeout(() => snd(900, .2, 'sawtooth', .16 * v, 300), 330);
+                break;
+                case 'rumble': snd(55, .7, 'square', .35 * v, 35);
+                nz(.6, .2 * v, 300);
+                break;
+                case 'neigh': snd(500, .15, 'sawtooth', .2 * v, 950);
+                setTimeout(() => snd(950, .12, 'sawtooth', .2 * v, 700), 150);
+                setTimeout(() => snd(700, .2, 'sawtooth', .2 * v, 380), 270);
+                break;
+                case 'whisper': nz(.9, .25 * v, 4000);
+                break;
+            }
+        }
+
+        let seed = 7;
+        const rnd = () => {
+            seed |= 0;
+            seed = seed + 0x6D2B79F5 | 0;
+            let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+        const R = (col, x, y, w, h) => {
+            g.fillStyle = col;
+            g.fillRect(x | 0, y | 0, w | 0, h | 0);
+        };
+        const TX = [];
+        const ov = document.getElementById('ov');
+        const oc = ov.getContext('2d');
+        function txt(s, x, y, sz, col, ctr) {
+            TX.push({ s, x, y, sz, col, ctr, a: g.globalAlpha });
+        }
+
+        function drawTX() {
+            const k = ov.width / W;
+            oc.clearRect(0, 0, ov.width, ov.height);
+            const d = Math.max(1, k / 3);
+            for (const t of TX) {
+                oc.font = 'bold ' + Math.round(t.sz * k * 1.12) + 'px "Courier New", Courier, monospace';
+                oc.textAlign = t.ctr ? 'center' : 'left';
+                oc.globalAlpha = Math.max(0, Math.min(1, t.a));
+                oc.fillStyle = 'rgba(0,0,0,.88)';
+                for (const o of [[-d, -d], [d, -d], [-d, d], [d, d], [0, d], [0, -d], [d, 0], [-d, 0]]) oc.fillText(t.s, t.x * k + o[0], t.y * k + o[1]);
+                oc.fillStyle = t.col;
+                oc.fillText(t.s, t.x * k, t.y * k);
+            }
+            oc.globalAlpha = 1;
+        }
+
+        function render() {
+            fa = null; fb = null;
+            TX.length = 0;
+            render0();
+            drawTX();
+            if (st == 'title') drawTitle();
+            syncFields();
+        }
+
+        function person(x, y, f, fr, mvg, ci) {
+            g.fillStyle = 'rgba(0,0,0,.3)';
+            g.beginPath();
+            g.ellipse(x, y - 1, 8, 2.5, 0, 0, 7);
+            g.fill();
+            const im = spr[ci];
+            if (!ok(im)) {
+                R(SH[ci], x - 4, y - 14, 8, 14);
+                R('#f1c27d', x - 3, y - 18, 6, 5);
+                return;
+            }
+            const fl = Math.cos(f) < -.5 && Math.abs(Math.sin(f)) < .7;
+            const s = mvg ? fr % 2 : 0;
+            const b = mvg ? (s ? 0 : -1) : (((gt * 1.6 | 0) % 2) ? -1 : 0);
+            g.save();
+            g.translate(x | 0, y | 0);
+            if (mvg) g.rotate(s?.05: -.05);
+            if (fl) g.scale(-1, 1);
+            g.drawImage(im, 0, 23, 16, 9, -16, -7 + (mvg ? (s ? 0 : -1) : 0), 16, 9);
+            g.drawImage(im, 16, 23, 16, 9, 0, -7 + (mvg ? (s ? -1 : 0) : 0), 16, 9);
+            g.drawImage(im, 0, 0, 32, 23, -16, -30 + b, 32, 23);
+            g.restore();
+            R('#ffe680', x + (fl ? -9 : 8), y - 10, 2, 2);
+        }
+
+        function mobSpr(m, x, y) {
+            const fr = (m.ph * 6 | 0) % 2;
+            const v = vspr[m.t];
+            g.fillStyle = 'rgba(0,0,0,.3)';
+            g.beginPath();
+            g.ellipse(x, y - 1, 6, 2, 0, 0, 7);
+            g.fill();
+            if (ok(v)) {
+                const w = v.naturalWidth;
+                const h = v.naturalHeight;
+                const b = m.t == 0 ? -8 - Math.sin(m.ph * 5) * 2 : (fr ? -1 : 0);
+                g.save();
+                if (m.t == 3) g.globalAlpha = .6 + .25 * Math.sin(m.ph * 6);
+                g.translate(x | 0, (y - h + 2 + b) | 0);
+                if (m.left) {
+                    g.translate(w / 2, 0);
+                    g.scale(-1, 1);
+                } else g.translate(-w / 2, 0);
+                g.drawImage(v, 0, 0);
+                g.restore();
+                return;
+            }
+            if (m.t == 0) {
+                const by = y - 10 - Math.sin(m.ph * 5) * 2;
+                const w = fr ? 2 : -3;
+                R('#5a1a3a', x - 13, by - 8 + w, 10, 3);
+                R('#5a1a3a', x + 3, by - 8 + w, 10, 3);
+                R('#e8c9b0', x - 3, by - 8, 6, 8);
+                R('#1a0010', x - 4, by - 12, 8, 5);
+                R('#f22', x - 2, by - 9, 1, 1);
+                R('#f22', x + 1, by - 9, 1, 1);
+                R('#a12', x - 1, by, 2, 6 + fr);
+            } else if (m.t == 1) {
+                R('#2a1a0e', x - 5, y - 8, 4, 8);
+                R('#2a1a0e', x + 1, y - 8, 4, 8);
+                R('#3d2a17', x - 8, y - 24, 16, 16);
+                R('#2a1a0e', x - 5, y - 31, 10, 8);
+                R('#f22', x - 3, y - 28, 2, 2);
+                R('#f22', x + 1, y - 28, 2, 2);
+                R('#999', x + 3, y - 25, 6, 2);
+                R((m.ph * 8 | 0) % 2 ? '#ff7a1a' : '#ffc040', x + 9, y - 25, 2, 2);
+            } else if (m.t == 2) {
+                R('#3a2f27', x - 3, y - 9, 2, 9 - fr);
+                R('#3a2f27', x + 1, y - 9, 2, 8 + fr);
+                R('#6b5a4a', x - 4, y - 19, 8, 11);
+                R('#7a6a58', x - 3, y - 31, 6, 12);
+                R('#7a6a58', x - 6, y - 26, 4, 5);
+                R('#222', x + 2, y - 31, 2, 12);
+                R('#fd0', x - 2, y - 29, 1, 1);
+            } else {
+                g.save();
+                g.globalAlpha = .45 + .25 * Math.sin(m.ph * 6);
+                R('#dfe8ff', x - 5, y - 19, 10, 14);
+                for (let i = 0; i < 5; i++) R('#dfe8ff', x - 5 + i * 2, y - 5, 2, 2 + ((i + fr) % 2) * 2);
+                R('#101020', x - 3, y - 15, 2, 3);
+                R('#101020', x + 1, y - 15, 2, 3);
+                g.restore();
+            }
+        }
+
+        function tree(x, y, h) {
+            if (h % 7 == 0) {
+                R('#08140c', x + 4, y - 10, 8, 28);
+                R('#3a2a22', x + 5, y - 9, 6, 26);
+                R('#3a2a22', x, y - 9, 6, 3);
+                R('#3a2a22', x + 10, y - 13, 6, 3);
+                return;
+            }
+            R('#08140c', x - 3, y - 20, 22, 38);
+            R('#4a2f1b', x + 6, y + 8, 4, 8);
+            const c = h % 3 ? '#1f6e31' : '#2a7a2a';
+            const c2 = '#1a5e2a';
+            R(c2, x + 4, y - 18, 8, 6);
+            R(c2, x + 1, y - 12, 14, 6);
+            R(c, x - 2, y - 6, 20, 8);
+            R('#3f9650', x + 4, y - 12, 3, 2);
+            R('#144a22', x + 10, y - 3, 6, 2);
+        }
+
+        function backdrop() {
+            const gr = g.createLinearGradient(0, 0, 0, H);
+            gr.addColorStop(0, '#05051a');
+            gr.addColorStop(1, '#16263a');
+            g.fillStyle = gr;
+            g.fillRect(0, 0, W, H);
+            seed = 3;
+            g.fillStyle = '#fff';
+            for (let i = 0; i < 40; i++) {
+                const x = rnd() * W;
+                const y = rnd() * 100;
+                if (((gt * 2 | 0) + i) % 9) g.fillRect(x | 0, y | 0, 1, 1);
+            }
+            R('#d8cfa0', 276, 14, 24, 24);
+            R('#c2b887', 282, 21, 5, 5);
+            seed = 9;
+            g.fillStyle = '#07110e';
+            for (let x = -8; x < W + 8; x += 14) {
+                const h = 40 + rnd() * 40;
+                g.beginPath();
+                g.moveTo(x - 12, H - 8);
+                g.lineTo(x, H - 8 - h);
+                g.lineTo(x + 12, H - 8);
+                g.fill();
+            }
+            g.fillRect(0, H - 10, W, 10);
+            [[60, 140], [190, 148], [270, 138]].forEach((e, i) => {
+                if (Math.sin(gt * 1.3 + i * 2) > -.2) {
+                    R('#f22', e[0], e[1], 2, 1);
+                    R('#f22', e[0] + 5, e[1], 2, 1);
+                }
+            });
+        }
+
+        function btn(s, x, y, w, h, fn) {
+            R(lit[s] > gt - .15 ? '#7a2a2a' : '#3a1414', x, y, w, h);
+            g.strokeStyle = '#a05030';
+            g.lineWidth = 1;
+            g.strokeRect(x + .5, y + .5, w - 1, h - 1);
+            txt(s, x + w / 2, y + h / 2 + 3, 9, '#ffe0b0', 1);
+            btns.push({ x: x - 2, y: y - 2, w: w + 4, h: h + 4, fn, s });
+        }
+
+        function hit(x, y, w, h, fn) {
+            btns.push({ x, y, w, h, fn, s: '' });
+        }
+
+        function rGame() {
+            const cx = Math.max(0, Math.min(MW * T - W, me.x - W / 2));
+            const cy = Math.max(0, Math.min(MH * T - H, me.y - H / 2 - 6));
+            const tx0 = cx / T | 0;
+            const ty0 = cy / T | 0;
+            const L = [];
+            for (let ty = ty0; ty <= Math.min(MH - 1, ty0 + 12); ty++) for (let tx = tx0; tx <= Math.min(MW - 1, tx0 + 21); tx++) {
+                const sx = tx * T - cx;
+                const sy = ty * T - cy;
+                const h = (tx * 73856093 ^ ty * 19349663) & 255;
+                const camp = Math.hypot(tx + .5 - MW / 2, ty + .5 - MH / 2) < 4.5;
+                R(camp ? (h % 3 ? '#634b32' : '#6e553a') : (h % 4 ? '#2f7040' : '#2a6636'), sx, sy, T, T);
+                if (camp) {
+                    R('#4a3825', sx + h % 13, sy + (h >> 3) % 13, 2, 1);
+                } else {
+                    if (h % 3) {
+                        R('#45994f', sx + h % 12, sy + (h >> 4) % 12, 1, 3);
+                        R('#45994f', sx + h % 12 + 2, sy + (h >> 4) % 12 + 1, 1, 2);
+                    }
+                    if (h % 29 == 0) {
+                        R('#e8a0c0', sx + 3, sy + 5, 2, 2);
+                    } else if (h % 61 == 0) {
+                        R('#d8d0b8', sx + 3, sy + 8, 6, 1);
+                        R('#d8d0b8', sx + 5, sy + 6, 1, 5);
+                    }
+                }
+                if (map[ty][tx] == 1) L.push({ y: ty * T + T, f: () => tree(sx, sy, h) });
+                else if (map[ty][tx] == 2) L.push({
+                    y: ty * T + T,
+                    f: () => {
+                        R('#08140c', sx + 1, sy + 2, 14, 14);
+                        R('#6e7078', sx + 2, sy + 6, 12, 9);
+                        R('#80838c', sx + 5, sy + 3, 7, 4);
+                        R('#a6a9b2', sx + 3, sy + 6, 7, 2);
+                    }
+                });
+            }
+            for (const r of res) if (r.on) L.push({
+                y: r.y,
+                f: () => {
+                    const x = r.x - cx | 0, y = r.y - cy | 0;
+                    if (!r.t) {
+                        R('#8a5a2b', x - 5, y - 4, 10, 4);
+                        R('#b07a3c', x - 5, y - 4, 2, 4);
+                        R('#6e4620', x - 3, y - 7, 8, 3);
+                    } else {
+                        R('#8c9aa6', x - 5, y - 5, 10, 5);
+                        R('#c0c8d0', x - 3, y - 8, 4, 3);
+                        R('#d9a441', x + 1, y - 3, 3, 2);
+                        if ((gt * 3 | 0) % 2) R('#fff', x + 3, y - 9, 1, 1);
+                    }
+                }
+            });
+            L.push({
+                y: CY - 6,
+                f: () => {
+                    const x = CX + 34 - cx, y = CY - 2 - cy;
+                    g.fillStyle = '#b5472f';
+                    g.beginPath();
+                    g.moveTo(x - 14, y + 12);
+                    g.lineTo(x, y - 12);
+                    g.lineTo(x + 14, y + 12);
+                    g.fill();
+                    g.fillStyle = '#2a0f0a';
+                    g.beginPath();
+                    g.moveTo(x - 4, y + 12);
+                    g.lineTo(x, y - 2);
+                    g.lineTo(x + 4, y + 12);
+                    g.fill();
+                }
+            });
+            L.push({
+                y: RYp,
+                f: () => {
+                    const x = RXp - cx | 0, y = RYp - cy | 0;
+                    R('#3a3f45', x - 6, y - 8, 12, 8);
+                    R('#1b1d20', x - 5, y - 7, 6, 4);
+                    R('#aaa', x + 3, y - 14, 1, 6);
+                    R(radio >= 100 ? '#40ff60' : (gt * 2 | 0) % 2 ? '#f33' : '#501010', x + 3, y - 6, 2, 2);
+                    R('#222', x - 8, y - 20, 16, 3);
+                    R('#40c0ff', x - 8, y - 20, 16 * radio / 100, 3);
+                }
+            });
+            L.push({
+                y: CY,
+                f: () => {
+                    const x = CX - cx | 0, y = CY - cy | 0;
+                    R('#5a3a1a', x - 6, y - 3, 12, 3);
+                    if (fire > 0) {
+                        const fh = 5 + fire * .13, fl = Math.sin(gt * 18) * 2;
+                        g.fillStyle = '#ff7a1a';
+                        g.beginPath();
+                        g.moveTo(x - 5, y - 3);
+                        g.lineTo(x, y - 3 - fh + fl);
+                        g.lineTo(x + 5, y - 3);
+                        g.fill();
+                        g.fillStyle = '#ffd040';
+                        g.beginPath();
+                        g.moveTo(x - 2, y - 3);
+                        g.lineTo(x, y - 3 - fh / 2 + fl);
+                        g.lineTo(x + 2, y - 3);
+                        g.fill();
+                    }
+                }
+            });
+            for (const p of pl) if (p.hp > 0) L.push({
+                y: p.y,
+                f: () => {
+                    const x = p.x - cx, y = p.y - cy;
+                    if (p.hurt > 0 && (gt * 20 | 0) % 2) return;
+                    person(x, y, p.face, p.an * 8 | 0, p.mv, p.ch);
+                    txt(p.name || NAMES[p.ch], x, y - 35, 7, p == me ? '#ffe080' : '#fff', 1);
+                    if (p.atkT > 0) {
+                        g.strokeStyle = 'rgba(255,255,255,.85)';
+                        g.lineWidth = 2;
+                        g.beginPath();
+                        g.arc(x, y - 12, 26, p.face - 1.05, p.face + 1.05);
+                        g.stroke();
+                    }
+                }
+            });
+            for (const q of shel) L.push({
+                y: q.y,
+                f: () => {
+                    const x = q.x - cx | 0, y = q.y - cy | 0;
+                    g.fillStyle = 'rgba(0,0,0,.3)';
+                    g.beginPath();
+                    g.ellipse(x, y, 14, 3, 0, 0, 7);
+                    g.fill();
+                    g.fillStyle = '#1a0f08';
+                    g.beginPath();
+                    g.moveTo(x - 15, y + 2);
+                    g.lineTo(x, y - 21);
+                    g.lineTo(x + 15, y + 2);
+                    g.fill();
+                    g.fillStyle = '#7a5230';
+                    g.beginPath();
+                    g.moveTo(x - 13, y + 1);
+                    g.lineTo(x, y - 19);
+                    g.lineTo(x + 13, y + 1);
+                    g.fill();
+                    R('#9a6c40', x - 8, y - 9, 16, 1);
+                    R('#9a6c40', x - 5, y - 14, 10, 1);
+                    g.fillStyle = '#1a0f08';
+                    g.beginPath();
+                    g.moveTo(x - 4, y + 1);
+                    g.lineTo(x, y - 8);
+                    g.lineTo(x + 4, y + 1);
+                    g.fill();
+                    R('#4a2f1b', x - 15, y - 2, 2, 4);
+                    R('#4a2f1b', x + 13, y - 2, 2, 4);
+                    R('#222', x - 8, y + 5, 16, 2);
+                    R(q.dur > 5 ? '#60c060' : '#d05050', x - 8, y + 5, 16 * q.dur / SHEL_MAX, 2);
+                }
+            });
+            for (const m of mobs) L.push({ y: m.y, f: () => mobSpr(m, m.x - cx, m.y - cy) });
+            L.sort((a, b) => a.y - b.y);
+            L.forEach(o => o.f());
+            d.globalCompositeOperation = 'source-over';
+            d.fillStyle = 'rgba(3,5,20,' + (.91 - .47 * Math.pow(Math.max(0, 1 - tl / 300), 2.5)) + ')';
+            d.fillRect(0, 0, W, H);
+            d.globalCompositeOperation = 'destination-out';
+            const hole = (x, y, r, a) => {
+                const gr = d.createRadialGradient(x, y, 0, x, y, r);
+                gr.addColorStop(0, 'rgba(0,0,0,' + a + ')');
+                gr.addColorStop(1, 'rgba(0,0,0,0)');
+                d.fillStyle = gr;
+                d.beginPath();
+                d.arc(x, y, r, 0, 7);
+                d.fill();
+            };
+            hole(CX - cx, CY - cy - 4, fire > 0 ? 28 + fire * .5 : 6, .95);
+            for (const p of pl) {
+                if (p.hp <= 0) continue;
+                const x = p.x - cx;
+                const y = p.y - cy - 11;
+                hole(x, y, 26, .85);
+                if (p != me || flash) {
+                    const gr = d.createRadialGradient(x, y, 0, x, y, 100);
+                    gr.addColorStop(0, 'rgba(0,0,0,.95)');
+                    gr.addColorStop(1, 'rgba(0,0,0,.1)');
+                    d.fillStyle = gr;
+                    d.beginPath();
+                    d.moveTo(x, y);
+                    d.arc(x, y, 100, p.face - .45, p.face + .45);
+                    d.closePath();
+                    d.fill();
+                }
+            }
+            g.drawImage(dk, 0, 0);
+            hud();
+        }
+
+        function hud() {
+            for (let i = 0; i < 5; i++) R(me.hp > i ? '#e03040' : '#401820', 4 + i * 8, 4, 6, 5);
+            txt('WOOD ' + wood + '  BATTERY ' + scrap, 4, 22, 8, '#ffe0b0');
+            R('#222', 4, 26, 62, 5);
+            R('#40c0ff', 4, 26, 62 * radio / 100, 5);
+            txt('RADIO', 68, 32, 7, '#80d0ff');
+            R('#222', 4, 34, 62, 5);
+            R('#ff9030', 4, 34, 62 * fire / 100, 5);
+            txt('FIRE', 68, 40, 7, '#ffb060');
+            const hr = (300 - tl) / 300 * 6;
+            const hh = hr | 0;
+            txt((hh || 12) + ':' + String((hr - hh) * 60 | 0).padStart(2, '0') + ' AM', W / 2, 11, 9, '#e8e0ff', 1);
+            if (toastT > 0) txt(toast, W / 2, 62, 8, '#fff', 1);
+            if (savedT > 0) txt('SAVED', 4, H - 4, 7, '#80ff80');
+            if (joy) {
+                g.fillStyle = 'rgba(255,255,255,.25)';
+                g.beginPath();
+                g.arc(joy.ax, joy.ay, 18, 0, 7);
+                g.fill();
+                const dx = joy.x - joy.ax;
+                const dy = joy.y - joy.ay;
+                const dd = Math.max(1, Math.hypot(dx, dy));
+                const m = Math.min(dd, 20);
+                g.fillStyle = 'rgba(255,255,255,.5)';
+                g.beginPath();
+                g.arc(joy.ax + dx / dd * m, joy.ay + dy / dd * m, 7, 0, 7);
+                g.fill();
+            }
+            if (touchOn && !joy && !panel) {
+                g.strokeStyle = 'rgba(255,255,255,.25)';
+                g.lineWidth = 1;
+                g.beginPath();
+                g.arc(46, 136, 22, 0, 7);
+                g.stroke();
+                g.fillStyle = 'rgba(255,255,255,.12)';
+                g.beginPath();
+                g.arc(46, 136, 9, 0, 7);
+                g.fill();
+            }
+            drawMini();
+            btn('BAG', 280, 3, 36, 15, () => panel = panel == 1 ? 0 : 1);
+            btn('SET', 280, 20, 36, 15, () => panel = panel == 2 ? 0 : 2);
+            btn('MAP', 280, 37, 36, 15, () => panel = panel == 3 ? 0 : 3);
+            if (!panel) {
+                btn('SLASH', 262, 138, 52, 30, () => slash(me));
+                btn('DASH', 262, 104, 52, 26, () => dash(me));
+                btn('USE', 204, 146, 50, 24, () => act(me));
+                btn('BUILD', 204, 116, 50, 24, () => build(me));
+            }
+            if (panel) {
+                TX.forEach(t => t.a *= .35);
+                g.fillStyle = 'rgba(0,0,0,.6)';
+                g.fillRect(0, 0, W, H);
+                R('#1c1410', 52, 28, 216, 118);
+                g.strokeStyle = '#a05030';
+                g.strokeRect(52.5, 28.5, 215, 117);
+                if (panel == 1) {
+                    txt('INVENTORY', W / 2, 42, 10, '#ffe0b0', 1);
+                    const it = [
+                        ['TORCH', flash ? 'ON' : 'OFF'],
+                        ['SWORD', 'SLASH'],
+                        ['WOOD x' + wood, 'fire/B build'],
+                        ['BATTERY x' + scrap, 'radio']
+                    ];
+                    it.forEach((o, i) => {
+                        const x = 62 + i * 50;
+                        R('#2e211a', x, 50, 42, 46);
+                        g.strokeStyle = '#70452d';
+                        g.strokeRect(x + .5, 50.5, 41, 45);
+                        txt(o[0], x + 21, 88, 6, '#ffe0b0', 1);
+                        txt(o[1], x + 21, 58, 6, i == 0 && flash ? '#80ff80' : '#aaa', 1);
+                        if (i == 0) {
+                            R('#777', x + 8, 72, 18, 6);
+                            R(flash ? '#ffe680' : '#554', x + 26, 70, 5, 10);
+                            hit(x, 50, 42, 46, () => flash = !flash);
+                        }
+                    });
+                    txt('Tap the torch to switch it on/off', W / 2, 112, 7, '#b0a080', 1);
+                    btn('CLOSE', 130, 122, 60, 16, () => panel = 0);
+                } else if (panel == 3) rMapFull();
+                else rSettings(true);
+            }
+        }
+
+        function mapDots(x0, y0, sc, big) {
+            const px = v => x0 + v / T * sc, py = v => y0 + v / T * sc, z = big ? 5 : 2;
+            const dot = (x, y, col, n) => { g.fillStyle = col; g.fillRect(px(x) - n / 2 | 0, py(y) - n / 2 | 0, n, n); };
+            for (const r of res) if (r.on) r.t ? dot(r.x, r.y, (gt * 3 | 0) % 2 ? '#ffe060' : '#ffb020', z + 1) : dot(r.x, r.y, '#d9954a', z);
+            for (const q of shel) dot(q.x, q.y, '#c89a60', z);
+            dot(CX, CY, '#ff7a1a', z + 1);
+            dot(RXp, RYp, '#40c0ff', z + 1);
+            for (const m of mobs) if (Math.hypot(m.x - me.x, m.y - me.y) < 170) dot(m.x, m.y, '#ff3030', z);
+            for (const p of pl) if (p.hp > 0) dot(p.x, p.y, p == me ? ((gt * 4 | 0) % 2 ? '#fff' : '#8cf') : '#80ff80', z + 1);
+        }
+
+        function drawMini() {
+            if (!mmC) return;
+            R('#000', 211, 2, 66, 50);
+            g.globalAlpha = .85;
+            g.drawImage(mmC, 212, 3);
+            g.globalAlpha = 1;
+            mapDots(212, 3, 1, false);
+            g.strokeStyle = '#a05030';
+            g.strokeRect(211.5, 2.5, 65, 49);
+            if (!panel) hit(211, 2, 66, 50, () => panel = 3);
+        }
+
+        function rMapFull() {
+            R('#1c1410', 36, 8, 248, 164);
+            g.strokeStyle = '#a05030';
+            g.strokeRect(36.5, 8.5, 247, 163);
+            R('#000', 41, 13, 194, 146);
+            g.drawImage(mmC, 42, 14, 192, 144);
+            mapDots(42, 14, 3, true);
+            txt('MAP', 262, 24, 9, '#ffe0b0', 1);
+            [['WOOD', '#d9954a'], ['BATTERY', '#ffd040'], ['CAMP', '#ff7a1a'], ['RADIO', '#40c0ff'], ['SHELTER', '#c89a60'], ['MONSTER', '#ff3030'], ['YOU', '#ffffff']].forEach((o, i) => {
+                R(o[1], 242, 34 + i * 13, 5, 5);
+                txt(o[0], 251, 40 + i * 13, 6, '#e8dcb0');
+            });
+            btn('CLOSE', 240, 150, 40, 16, () => panel = 0);
+        }
+
+        function buildMaps() {
+            mmC = document.createElement('canvas');
+            mmC.width = MW;
+            mmC.height = MH;
+            const m = mmC.getContext('2d');
+            for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+                const v = map[y][x];
+                m.fillStyle = v == 1 ? '#0f2e17' : v == 2 ? '#6a6d76' : Math.hypot(x + .5 - MW / 2, y + .5 - MH / 2) < 4.5 ? '#5a4630' : '#235232';
+                m.fillRect(x, y, 1, 1);
+            }
+        }
+
+        function rSettings(inGame) {
+            R('#1c1410', 36, 22, 248, 138);
+            g.strokeStyle = '#a05030';
+            g.strokeRect(36.5, 22.5, 247, 137);
+            txt('SETTINGS', W / 2, 36, 10, '#ffe0b0', 1);
+            let y = 42;
+            const row = (s, fn) => { btn(s, 46, y, 104, 14, fn); y += 16; };
+            row(inGame ? 'RESUME' : 'CLOSE', () => panel = 0);
+            if (inGame) {
+                row(mode == 2 ? 'AUTOSAVE: N/A' : 'SAVE NOW', save);
+                row('TORCH: ' + (flash ? 'ON' : 'OFF'), () => flash = !flash);
+            }
+            row('MONSTERS', () => openBeast(false));
+            row('HOW TO PLAY', openInstr);
+            row('CHANGE NAME', openName);
+            if (inGame) row('MAIN MENU', () => { save(); closeNet(); panel = 0; st = 'mode'; });
+            txt('MUSIC', 220, 52, 8, '#ffe0b0', 1);
+            btn('-', 160, 57, 20, 17, () => setMusicVol(musicVol - .1));
+            txt(Math.round(musicVol * 100) + '%', 220, 70, 9, '#fff', 1);
+            btn('+', 240, 57, 20, 17, () => setMusicVol(musicVol + .1));
+            txt('SOUND FX', 220, 98, 8, '#ffe0b0', 1);
+            btn('-', 160, 103, 20, 17, () => setSfxVol(sfxVol - .1));
+            txt(Math.round(sfxVol * 100) + '%', 220, 116, 9, '#fff', 1);
+            btn('+', 240, 103, 20, 17, () => setSfxVol(sfxVol + .1));
+            btn('FULLSCREEN', 160, 126, 100, 17, goFull);
+            if (inGame) txt('Autosaves every 10s', 222, 154, 6, '#998877', 1);
+        }
+
+        const INSTR = [
+            ['THE GOAL', 'You are stuck in a cursed forest at night.', '', 'WIN  Survive until sunrise (6:00 AM)', '     OR repair the radio with 8 batteries', '     to call for rescue.', 'LOSE If the monsters get you.', '', 'The night lasts about 5 minutes.'],
+            ['CONTROLS (PHONE)', 'MOVE    drag on the left side of screen', 'SLASH   hit monsters near you', 'DASH    quick burst of speed', 'USE     pick up / feed fire / fix radio', 'BUILD   build a shelter in front of you', 'BAG     your items and torch', 'MAP     see where items are', 'SET     music, sound, fullscreen'],
+            ['CONTROLS (PC)', 'MOVE    W A S D', 'SLASH   SPACE', 'DASH    SHIFT', 'USE      E', 'BUILD    B', 'TORCH    F', 'MAP      M'],
+            ['WHAT TO DO', '1. Walk to a tree. Press USE to get WOOD.', '2. Walk to a battery pile. USE to get', '   BATTERIES.', '3. Stand at the campfire. USE to add wood.', '   The fire slowly dies. Keep it alive!', '4. Stand at the radio. USE to add a', '   battery. You need 8 to call rescue.', '5. BUILD a shelter (costs 6 wood).'],
+            ['SURVIVAL TIPS', 'Monsters fear FIRE. Stay near the fire.', 'Shelters keep monsters away. Monsters', 'damage them, so fix them with wood.', 'Manananggal flies. Kapre is tough.', 'Tikbalang charges. Multo floats through', 'trees. SLASH and DASH to stay alive.', 'Multiplayer: host shares the 4-letter', 'code. Friends enter it under JOIN.']
+        ];
+
+        function confirmName() {
+            playerName = cleanName(playerName);
+            if (!playerName) {
+                nameMsg = 'Please type a name first';
+                return;
+            }
+            nameMsg = '';
+            savePrefs();
+            if (me) me.name = playerName;
+            st = nameReturn;
+            stT = 0;
+        }
+
+        function openName() {
+            nameReturn = st;
+            panel = 0;
+            nameMsg = '';
+            st = 'name';
+        }
+
+        function toMode() {
+            st = 'mode';
+            stT = 0;
+            let seen = false;
+            try { seen = !!localStorage.getItem('lcseen'); localStorage.setItem('lcseen', '1'); } catch (e) {}
+            if (!seen) openInstr();
+        }
+
+        function openInstr() {
+            instrPage = 0;
+            instrReturn = st;
+            panel = 0;
+            st = 'instr';
+        }
+
+        function openBeast(pre) {
+            beastPg = 0;
+            beastPre = pre;
+            if (!pre) {
+                const back = st;
+                beastGo = () => st = back;
+            }
+            panel = 0;
+            st = 'beast';
+        }
+
+        function rInstr() {
+            backdrop();
+            g.fillStyle = 'rgba(0,0,0,.6)';
+            g.fillRect(0, 0, W, H);
+            R('#1c1410', 20, 10, 280, 160);
+            g.strokeStyle = '#a05030';
+            g.strokeRect(20.5, 10.5, 279, 159);
+            const pg = INSTR[instrPage];
+            txt('HOW TO PLAY  (' + (instrPage + 1) + '/' + INSTR.length + ')', W / 2, 26, 11, '#ffd070', 1);
+            txt(pg[0], W / 2, 40, 9, '#ffb060', 1);
+            for (let i = 1; i < pg.length; i++) txt(pg[i], 32, 54 + (i - 1) * 10, 8, '#e8dcb0');
+            if (instrPage > 0) btn('BACK', 30, 150, 60, 16, () => instrPage--);
+            if (instrPage < INSTR.length - 1) btn('NEXT', 230, 150, 60, 16, () => instrPage++);
+            else btn('CLOSE', 230, 150, 60, 16, () => st = instrReturn);
+        }
+
+        function beastNext() {
+            if (beastPg < BEAST.length - 1) beastPg++;
+            else beastGo();
+        }
+
+        function rBeast() {
+            backdrop();
+            g.fillStyle = 'rgba(0,0,0,.6)';
+            g.fillRect(0, 0, W, H);
+            const b = BEAST[beastPg];
+            txt('KNOW YOUR ENEMY  (' + (beastPg + 1) + '/' + BEAST.length + ')', W / 2, 14, 10, '#ffd070', 1);
+            R('#140c0c', 14, 22, 104, 124);
+            g.strokeStyle = '#a05030';
+            g.strokeRect(14.5, 22.5, 103, 123);
+            const gr = g.createRadialGradient(66, 90, 4, 66, 90, 56);
+            gr.addColorStop(0, 'rgba(160,20,20,.45)');
+            gr.addColorStop(1, 'rgba(160,20,20,0)');
+            g.fillStyle = gr;
+            g.fillRect(15, 23, 102, 122);
+            g.save();
+            g.translate(66, 138);
+            g.scale(1.5, 1.5);
+            mobSpr({ t: beastPg, ph: gt, left: false }, 0, 0);
+            g.restore();
+            txt(b.n, 126, 36, 12, '#ff7060');
+            txt(b.a, 126, 47, 7, '#b0a090');
+            b.i.forEach((l, i) => txt(l, 126, 62 + i * 10, 7, '#e8dcb0'));
+            txt('HEALTH', 126, 100, 7, '#ffb060');
+            R('#222', 168, 94, 60, 5);
+            R('#e03040', 168, 94, 60 * MHP[beastPg] / 12, 5);
+            txt('SPEED', 126, 110, 7, '#ffb060');
+            R('#222', 168, 104, 60, 5);
+            R('#40c0ff', 168, 104, 60 * MSP[beastPg] / 44, 5);
+            txt('DAMAGE', 126, 120, 7, '#ffb060');
+            for (let i = 0; i < (beastPg == 1 || beastPg == 2 ? 2 : 1); i++) R('#e03040', 168 + i * 9, 114, 6, 5);
+            txt('TIP: ' + b.tip, 126, 136, 7, '#80d0ff');
+            if (beastPg > 0) btn('BACK', 14, 152, 50, 16, () => beastPg--);
+            if (beastPre && beastPg < BEAST.length - 1) btn('SKIP', 130, 152, 60, 16, beastGo);
+            btn(beastPg < BEAST.length - 1 ? 'NEXT' : beastPre ? 'PLAY' : 'CLOSE', 256, 152, 50, 16, beastNext);
+        }
+
+        const TF = '"Creepster","Chiller","Nosifer","Jokerman","Papyrus","Old English Text MT",Georgia,"Times New Roman",serif';
+        const dripCache = {};
+        try {
+            document.fonts.load('40px Creepster');
+        } catch (e) {}
+        function startGame0() {
+            startMusic();
+            if (touchOn && !fullTried) { fullTried = true; goFull(); }
+            if (!cleanName(playerName)) { nameReturn = 'lore'; st = 'name'; } else st = 'lore';
+            stT = 0;
+        }
+
+        function drawTitle() {
+            const k = ov.width / W;
+            const lines = ['THE LAST', 'CAMP'];
+            const size = [30, 54];
+            const base = [50, 98];
+            const fk = document.fonts.check('40px Creepster') ? 1 : 0;
+            for (let li = 0; li < 2; li++) {
+                const fs = Math.round(size[li] * k);
+                const by = base[li] * k;
+                const cx = ov.width / 2;
+                oc.font = fs + 'px ' + TF;
+                oc.textAlign = 'center';
+                oc.textBaseline = 'alphabetic';
+                oc.lineJoin = 'round';
+                for (let j = 3; j >= 1; j--) {
+                    oc.lineWidth = k * j * 2.4;
+                    oc.strokeStyle = 'rgba(150,0,0,.15)';
+                    oc.strokeText(lines[li], cx, by);
+                }
+                oc.lineWidth = k * 2.2;
+                oc.strokeStyle = '#0a0000';
+                oc.strokeText(lines[li], cx, by);
+                const gr = oc.createLinearGradient(0, by - fs * .8, 0, by);
+                gr.addColorStop(0, '#f6ecd4');
+                gr.addColorStop(1, '#c01c1c');
+                oc.fillStyle = gr;
+                oc.fillText(lines[li], cx, by);
+                const key = li + ':' + fs + ':' + ov.width + ':' + fk;
+                let cols = dripCache[key];
+                if (!cols) {
+                    cols = [];
+                    const mc = document.createElement('canvas');
+                    const w = oc.measureText(lines[li]).width;
+                    mc.width = Math.ceil(w + 20);
+                    mc.height = Math.ceil(fs * 1.3);
+                    const mx = mc.getContext('2d');
+                    mx.font = oc.font;
+                    mx.textAlign = 'center';
+                    mx.fillStyle = '#fff';
+                    mx.fillText(lines[li], mc.width / 2, fs);
+                    const d = mx.getImageData(0, 0, mc.width, mc.height).data;
+                    const step = Math.max(4, Math.round(k * 3));
+                    for (let x = 2; x < mc.width - 2; x += step) {
+                        let bot = -1;
+                        for (let y = mc.height - 1; y >= 0; y--) if (d[(y * mc.width + x) * 4 + 3] > 128) {
+                            bot = y;
+                            break;
+                        }
+                        if (bot >= 0) cols.push([cx - mc.width / 2 + x, by - fs + bot, (x * 7 + li * 13) % 100]);
+                    }
+                    dripCache[key] = cols;
+                }
+                for (const c of cols) if (c[2] < 42) {
+                    const len = (6 + c[2] % 12) * k * (.55 + .45 * Math.sin(gt * .8 + c[2])) * (li ? 1 : .5);
+                    const dw = Math.max(2, k);
+                    oc.fillStyle = '#a81414';
+                    oc.fillRect(c[0] - dw / 2, c[1] - 1, dw, len);
+                    oc.fillStyle = '#e02828';
+                    oc.beginPath();
+                    oc.arc(c[0], c[1] + len, dw, 0, 7);
+                    oc.fill();
+                }
+            }
+        }
+
+        function render0() {
+            btns = [];
+            g.imageSmoothingEnabled = false;
+            if (st == 'title') {
+                backdrop();
+                g.fillStyle = 'rgba(120,0,0,.07)';
+                g.beginPath();
+                g.ellipse(160, 50, 120, 45, 0, 0, 7);
+                g.fill();
+                if ((gt * 7 | 0) % 23) txt('A Philippine Folklore Survival', W / 2, 120, 8, '#c0a090', 1);
+                const lp = Math.min(1, stT / 3.5);
+                const le = lp * lp * (3 - 2 * lp);
+                if (stT < 3.6) {
+                    R('#1a0808', 80, 136, 160, 9);
+                    g.strokeStyle = '#8a1a1a';
+                    g.strokeRect(80.5, 136.5, 159, 8);
+                    R('#c02020', 82, 138, 156 * le, 5);
+                    txt('LOADING ' + Math.round(le * 100) + '%', W / 2, 158, 9, '#e8dcb0', 1);
+                    txt(TIPS[(stT / .9 | 0) % TIPS.length], W / 2, 172, 7, '#a09080', 1);
+                } else {
+                    g.globalAlpha = .75 + .25 * Math.sin(gt * 4);
+                    btn('START', 105, 138, 110, 24, startGame0);
+                    g.globalAlpha = 1;
+                    txt('tap START to begin', W / 2, 174, 7, '#a09080', 1);
+                }
+            } else if (st == 'lore') {
+                const i = stT / 5 | 0;
+                if (i >= LORE.length) {
+                    toMode();
+                    return;
+                }
+                backdrop();
+                g.fillStyle = '#8a3b2a';
+                g.beginPath();
+                g.moveTo(30, 158);
+                g.lineTo(55, 126);
+                g.lineTo(80, 158);
+                g.fill();
+                g.fillStyle = '#1a0a08';
+                g.beginPath();
+                g.moveTo(48, 158);
+                g.lineTo(55, 140);
+                g.lineTo(62, 158);
+                g.fill();
+                R('#5a3a1a', 94, 155, 12, 3);
+                g.fillStyle = 'rgba(255,140,40,.15)';
+                g.beginPath();
+                g.arc(100, 156, 30, 0, 7);
+                g.fill();
+                const fl = Math.sin(gt * 20) * 2;
+                g.fillStyle = '#ff7a1a';
+                g.beginPath();
+                g.moveTo(96, 155);
+                g.lineTo(100, 143 + fl);
+                g.lineTo(104, 155);
+                g.fill();
+                person(118, 157, Math.PI, 0, 0, 0);
+                for (let k = 0; k <= i; k++) {
+                    R('#f22', 300 - k * 28, 146 - k * 3, 2, 1);
+                    R('#f22', 305 - k * 28, 146 - k * 3, 2, 1);
+                }
+                const lt = stT % 5;
+                g.globalAlpha = Math.max(0, Math.min(1, Math.min(lt, 5 - lt) / .8));
+                const ln = LORE[i].split('|');
+                txt(ln[0], W / 2, 40, 10, '#ffe0b0', 1);
+                txt(ln[1], W / 2, 58, 8, '#e0d0b0', 1);
+                g.globalAlpha = 1;
+                txt('tap to skip', W / 2, H - 3, 7, '#a09080', 1);
+                hit(0, 0, W, H, () => {
+                    toMode();
+                });
+            } else if (st == 'name') {
+                backdrop();
+                txt('WELCOME, SURVIVOR', W / 2, 40, 14, '#e8dcb0', 1);
+                txt('What is your name?', W / 2, 62, 10, '#d0c0a0', 1);
+                fa = { id: 'name', x: 80, y: 70, w: 160, h: 22, max: 12, ph: 'Type your name', get: () => playerName, focus: true };
+                txt('Letters and numbers, up to 12.', W / 2, 108, 7, '#a09080', 1);
+                txt('This name is saved. You can change it in Settings.', W / 2, 118, 7, '#a09080', 1);
+                if (nameMsg) txt(nameMsg, W / 2, 130, 8, '#ff6060', 1);
+                btn('CONTINUE', 120, 142, 80, 20, confirmName);
+            } else if (st == 'mode') {
+                backdrop();
+                txt('CHOOSE YOUR NIGHT', W / 2, 34, 14, '#e8dcb0', 1);
+                if (panel == 2) {
+                    TX.length = 0;
+                    g.fillStyle = 'rgba(0,0,0,.6)';
+                    g.fillRect(0, 0, W, H);
+                    rSettings(false);
+                } else {
+                    let y = 46;
+                    btn('SOLO', 110, y, 100, 18, () => {
+                        mode = 0;
+                        st = 'char';
+                    });
+                    y += 22;
+                    btn('SOLO + BOTS', 110, y, 100, 18, () => {
+                        mode = 1;
+                        st = 'char';
+                    });
+                    y += 22;
+                    btn('MULTIPLAYER', 110, y, 100, 18, () => {
+                        mode = 2;
+                        st = 'char';
+                    });
+                    y += 22;
+                    if (hasSave()) {
+                        btn('CONTINUE', 110, y, 100, 18, load);
+                        y += 22;
+                    }
+                    btn('HOW TO PLAY', 110, y, 100, 18, openInstr);
+                    y += 22;
+                    btn('SETTINGS', 110, y, 100, 18, () => panel = 2);
+                }
+            } else if (st == 'char') {
+                backdrop();
+                g.fillStyle = 'rgba(0,0,10,.6)';
+                g.fillRect(0, 0, W, H);
+                if (ch !== lastCh) { lastCh = ch; snd(480 + ch * 90, .08, 'triangle', .12, 560 + ch * 90); }
+                chv += (ch - chv) * Math.min(1, 9 * ldt);
+                const sx = 40 + chv * 80;
+                g.fillStyle = 'rgba(255,226,150,' + (.13 + .03 * Math.sin(gt * 9)) + ')';
+                g.beginPath();
+                g.moveTo(sx - 5, 34);
+                g.lineTo(sx + 5, 34);
+                g.lineTo(sx + 46, 132);
+                g.lineTo(sx - 46, 132);
+                g.fill();
+                const gr = g.createRadialGradient(sx, 126, 2, sx, 126, 46);
+                gr.addColorStop(0, 'rgba(255,200,110,.5)');
+                gr.addColorStop(1, 'rgba(255,170,70,0)');
+                g.fillStyle = gr;
+                g.fillRect(sx - 50, 90, 100, 50);
+                txt('CHOOSE YOUR CAMPER', W / 2, 16, 12, '#e8dcb0', 1);
+                txt('PLAYING AS  ' + shownName(), W / 2, 30, 9, '#ffe080', 1);
+                for (let i = 0; i < 4; i++) {
+                    const cx = 40 + i * 80, lt = Math.max(0, 1 - Math.abs(chv - i));
+                    g.save();
+                    g.globalAlpha = .22 + .78 * lt;
+                    g.translate(cx, 124);
+                    g.scale(2 + .6 * lt, 2 + .6 * lt);
+                    person(0, 0, 1.57, gt * 6 | 0, i == ch ? 1 : 0, i);
+                    g.restore();
+                    txt(NAMES[i], cx, 142, i == ch ? 11 : 8, i == ch ? '#ffe0b0' : '#6a5a50', 1);
+                    hit(cx - 38, 34, 76, 112, () => ch = i);
+                }
+                btn('<', 4, 74, 18, 26, () => ch = Math.max(0, ch - 1));
+                btn('>', 298, 74, 18, 26, () => ch = Math.min(3, ch + 1));
+                btn('CONFIRM', 120, 148, 80, 20, () => {
+                    beastGo = () => {
+                        if (mode == 2) { netMsg = ''; st = 'mp'; } else { myId = 0; newGame(mode == 1 ? 4 : 1); }
+                    };
+                    openBeast(true);
+                });
+                btn('BACK', 10, 154, 40, 16, () => st = 'mode');
+                txt('Swipe or tap to shine the light on a camper', W / 2, 177, 6, '#8a7a6a', 1);
+            } else if (st == 'mp') {
+                backdrop();
+                g.fillStyle = 'rgba(0,0,0,.45)';
+                g.fillRect(0, 0, W, H);
+                txt('MULTIPLAYER', W / 2, 22, 14, '#e8dcb0', 1);
+                R('#150d0b', 20, 30, 130, 84);
+                R('#150d0b', 170, 30, 130, 84);
+                g.strokeStyle = '#604030';
+                g.strokeRect(20.5, 30.5, 129, 83);
+                g.strokeRect(170.5, 30.5, 129, 83);
+                txt('HOST A GAME', 85, 44, 9, '#ffb060', 1);
+                txt('HOW MANY PLAYERS?', 85, 60, 7, '#d0c0a0', 1);
+                btn('-', 40, 66, 16, 16, () => nP = Math.max(2, nP - 1));
+                txt('' + nP, 85, 79, 12, '#fff', 1);
+                btn('+', 114, 66, 16, 16, () => nP = Math.min(4, nP + 1));
+                btn('HOST', 45, 90, 80, 20, () => connect('HOST ' + nP));
+                txt('JOIN A GAME', 235, 44, 9, '#ffb060', 1);
+                txt('ROOM CODE FROM THE HOST', 235, 60, 7, '#d0c0a0', 1);
+                fa = { id: 'code', x: 200, y: 64, w: 70, h: 20, max: 4, ph: 'CODE', get: () => joinCode };
+                btn('JOIN', 195, 90, 80, 20, joinGame);
+                wrapTxt(netMsg, W / 2, 134, 7, '#ff6060', 44);
+                btn('BACK', 10, 154, 40, 16, () => {
+                    closeNet();
+                    st = 'char';
+                });
+            } else if (st == 'lobby') {
+                backdrop();
+                txt('LOBBY', W / 2, 28, 14, '#e8dcb0', 1);
+                if (hostF) {
+                    txt('ROOM CODE', W / 2, 56, 8, '#d0c0a0', 1);
+                    txt(code, W / 2, 80, 22, '#ffd070', 1);
+                    txt('Share this code. Java and web players can both join.', W / 2, 94, 7, '#b0a080', 1);
+                    txt('Players: ' + (joined + 1) + ' / ' + nP, W / 2, 112, 10, '#fff', 1);
+                    if (joined > 0) btn('START', 130, 124, 60, 20, () => {
+                        const n = joined + 1;
+                        send('GO ' + n);
+                        newGame(n);
+                    });
+                } else txt('Connected! Waiting for host to start...', W / 2, 90, 9, '#fff', 1);
+                wrapTxt(netMsg, W / 2, 140, 7, '#ff6060', 44);
+                btn('BACK', 10, 156, 40, 16, () => {
+                    closeNet();
+                    st = 'mp';
+                });
+            } else if (st == 'game') rGame();
+            else if (st == 'instr') rInstr();
+            else if (st == 'beast') rBeast();
+            else {
+                backdrop();
+                g.globalAlpha = Math.min(1, stT / .8);
+                if (!win) {
+                    g.fillStyle = 'rgba(120,0,0,.24)';
+                    g.fillRect(0, 0, W, H);
+                    txt(endTitle, W / 2, 58, 20, '#ff5050', 1);
+                    if (died) txt('GAME OVER', W / 2, 82, 16, '#ff9090', 1);
+                } else txt(endTitle, W / 2, 68, 20, '#70ff90', 1);
+                txt(msg, W / 2, 106, 9, '#e8dcb0', 1);
+                g.globalAlpha = 1;
+                const menu = () => { closeNet(); st = 'mode'; };
+                if (mode < 2) {
+                    btn('TRY AGAIN', 60, 122, 90, 20, () => { myId = 0; newGame(mode == 1 ? 4 : 1); });
+                    btn('MAIN MENU', 170, 122, 90, 20, menu);
+                } else btn('MAIN MENU', 115, 122, 90, 20, menu);
+            }
+        }
+
+        class JR {
+            constructor(x) {
+                this.s = (BigInt(x) ^ 0x5DEECE66Dn) & ((1n << 48n) - 1n);
+            }
+            next(b) {
+                this.s = (this.s * 0x5DEECE66Dn + 0xBn) & ((1n << 48n) - 1n);
+                return Number(this.s >> (48n - BigInt(b)));
+            }
+            nextDouble() {
+                return (this.next(26) * 134217728 + this.next(27)) / 9007199254740992;
+            }
+            nextInt(n) {
+                if ((n & -n) == n) return Number((BigInt(n) * BigInt(this.next(31))) >> 31n);
+                let bits;
+                let val;
+                do {
+                    bits = this.next(31);
+                    val = bits % n;
+                }
+                while (bits - val + (n - 1) > 2147483647);
+                return val;
+            }
+        }
+
+        function gen() {
+            const r = new JR(7);
+            map = [];
+            res = [];
+            for (let y = 0; y < MH; y++) {
+                map[y] = [];
+                for (let x = 0; x < MW; x++) {
+                    const dd = Math.hypot(x + .5 - MW / 2, y + .5 - MH / 2);
+                    let v = 0;
+                    if (!x || !y || x == MW - 1 || y == MH - 1) v = 1;
+                    else if (dd > 6) {
+                        const q = r.nextDouble();
+                        v = q < .16 ? 1 : q < .185 ? 2 : 0;
+                    }
+                    map[y][x] = v;
+                }
+            }
+            for (let i = 0; i < 70; i++) {
+                const x = 1 + r.nextInt(MW - 2);
+                const y = 1 + r.nextInt(MH - 2);
+                if (!map[y][x] && Math.hypot(x - MW / 2, y - MH / 2) > 6) res.push({ x: x * T + 8, y: y * T + 12, t: i % 3 == 0 ? 1 : 0, on: true, rs: 0 });
+            }
+            buildMaps();
+        }
+
+        const solid = (x, y) => {
+            const tx = Math.floor(x / T);
+            const ty = Math.floor(y / T);
+            return tx < 0 || ty < 0 || tx >= MW || ty >= MH || map[ty][tx] > 0;
+        };
+        const blk = (x, y) => solid(x - 3, y) || solid(x + 3, y) || solid(x - 3, y - 3) || solid(x + 3, y - 3);
+        const mv = (p, dx, dy) => {
+            if (!blk(p.x + dx, p.y)) p.x += dx;
+            if (!blk(p.x, p.y + dy)) p.y += dy;
+        };
+        const mk = (i, cc) => ({
+            id: i,
+            ch: cc,
+            x: CX + (i - 1.5) * 14,
+            y: CY + 24,
+            face: 1.57,
+            hp: 5,
+            an: 0,
+            mv: 0,
+            atkT: 0,
+            atkCd: 0,
+            dT: 0,
+            dCd: 0,
+            hurt: 0,
+            bot: 0,
+            name: ''
+        });
+        const frad = () => fire > 0 ? 14 + fire * .35 : 0;
+        const nearShel = (x, y, r) => shel.find(q => Math.hypot(q.x - x, q.y - y) < r);
+        function canBuild(x, y) {
+            if (wood < SHEL_COST) return 'Need ' + SHEL_COST + ' wood to build a shelter';
+            if (shel.length >= 3) return 'You can only keep 3 shelters';
+            if (solid(x, y) || solid(x - 10, y) || solid(x + 10, y)) return 'No room to build here';
+            if (nearShel(x, y, 34) || Math.hypot(x - CX, y - CY) < 36 || Math.hypot(x - RXp, y - RYp) < 24) return 'Too close to something';
+            return null;
+        }
+
+        function build(p) {
+            const x = p.x + Math.cos(p.face) * 22;
+            const y = p.y + Math.sin(p.face) * 22;
+            const why = canBuild(x, y);
+            if (why) {
+                say(why);
+                return;
+            }
+            if (rem(p)) {
+                send('B ' + (x | 0) + ' ' + (y | 0));
+                sfx('build');
+                return;
+            }
+            applyBuild(x, y);
+        }
+
+        function applyBuild(x, y) {
+            if (canBuild(x, y)) return;
+            wood -= SHEL_COST;
+            shel.push({ x, y, dur: SHEL_MAX });
+            sfx('build');
+            say('Shelter built! Monsters keep away.');
+        }
+
+        function applyRepair(i) {
+            const q = shel[i];
+            if (!q || wood <= 0 || q.dur >= SHEL_MAX - 1) return;
+            wood--;
+            q.dur = Math.min(SHEL_MAX, q.dur + 4);
+            sfx('build');
+        }
+
+        function spawn() {
+            const a = pl.filter(p => p.hp > 0);
+            const p = a[Math.random() * a.length | 0];
+            if (!p) return;
+            const an = Math.random() * 7;
+            const m = {
+                id: nid++,
+                t: Math.random() * 4 | 0,
+                x: Math.max(20, Math.min(MW * T - 20, p.x + Math.cos(an) * 160)),
+                y: Math.max(20, Math.min(MH * T - 20, p.y + Math.sin(an) * 160)),
+                ch: 1,
+                ph: 0,
+                left: 0
+            };
+            if (solid(m.x, m.y) && (m.t == 1 || m.t == 2)) m.t = Math.random() < .5 ? 0 : 3;
+            m.hp = MHP[m.t];
+            mobs.push(m);
+            sfx(MSND[m.t], .6);
+        }
+
+        function mobAI(m, dt) {
+            let t = null;
+            let bd = 1e9;
+            for (const p of pl) if (p.hp > 0) {
+                const dd = Math.hypot(p.x - m.x, p.y - m.y);
+                if (dd < bd) {
+                    bd = dd;
+                    t = p;
+                }
+            }
+            if (!t) return;
+            let a = Math.atan2(t.y - m.y, t.x - m.x);
+            let sp = MSP[m.t] * (1 + (1 - tl / 300) * .4);
+            m.ph += dt;
+            if (Math.hypot(m.x - CX, m.y - CY) < frad()) {
+                a = Math.atan2(m.y - CY, m.x - CX);
+                sp = 55;
+            } else if (nearShel(m.x, m.y, 34)) {
+                const q = nearShel(m.x, m.y, 34);
+                a = Math.atan2(m.y - q.y, m.x - q.x);
+                sp = 50;
+            } else if (m.t == 2) {
+                m.ch -= dt;
+                if (m.ch < -4) m.ch = 1;
+                if (m.ch > 0) sp *= 2.8;
+            }
+            let vx = Math.cos(a) * sp * dt;
+            let vy = Math.sin(a) * sp * dt;
+            if (m.t == 0) {
+                vx += Math.cos(m.ph * 3) * .4;
+                vy += Math.sin(m.ph * 4) * .4;
+            }
+            if (Math.abs(vx) > .01) m.left = vx < 0;
+            if (m.t == 0 || m.t == 3) {
+                m.x += vx;
+                m.y += vy;
+            } else {
+                if (!solid(m.x + vx + Math.sign(vx) * 5, m.y)) m.x += vx;
+                if (!solid(m.x, m.y + vy + Math.sign(vy) * 3)) m.y += vy;
+            }
+        }
+
+        const clearLine = (x0, y0, x1, y1) => {
+            const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 5);
+            for (let i = 1; i <= n; i++) if (blk(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n)) return false;
+            return true;
+        };
+
+        function pathStep(sx, sy, gx, gy) {
+            if (sx < 0 || sy < 0 || sx >= MW || sy >= MH || map[sy][sx] > 0) return null;
+            const start = sy * MW + sx, prev = new Int16Array(MW * MH).fill(-1), q = [start], gs = map[gy][gx] > 0;
+            prev[start] = start;
+            let found = -1;
+            for (let h = 0; h < q.length; h++) {
+                const cur = q[h], cx = cur % MW, cy = cur / MW | 0;
+                if ((cx == gx && cy == gy) || (gs && Math.abs(cx - gx) + Math.abs(cy - gy) == 1)) { found = cur; break; }
+                for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                    const nx = cx + dx, ny = cy + dy;
+                    if (nx < 0 || ny < 0 || nx >= MW || ny >= MH || map[ny][nx] > 0) continue;
+                    const ni = ny * MW + nx;
+                    if (prev[ni] >= 0) continue;
+                    prev[ni] = cur;
+                    q.push(ni);
+                }
+            }
+            if (found < 0) return null;
+            if (found == start) return [sx, sy];
+            let cur = found;
+            while (prev[cur] != start) cur = prev[cur];
+            return [cur % MW, cur / MW | 0];
+        }
+
+        function bot(b, dt) {
+            b.ban = b.ban || {};
+            b.ptT = (b.ptT || 0) - dt;
+            b.jit = (b.jit || 0) - dt;
+            b.stk = (b.stk || 0) + dt;
+            let tx = b.x, ty = b.y, go = 0, tm = null, bd = 60, ri = -1, hunt = false;
+            for (const m of mobs) {
+                const dd = Math.hypot(m.x - b.x, m.y - b.y);
+                if (dd < bd) { bd = dd; tm = m; }
+            }
+            const low = b.hp <= 2 && fire > 0;
+            if (tm) {
+                b.face = Math.atan2(tm.y - b.y, tm.x - b.x);
+                if (bd < 24) slash(b);
+                if (!low) {
+                    hunt = true;
+                    if (bd >= 24) { tx = tm.x; ty = tm.y; go = 1; }
+                }
+            }
+            if (!hunt) {
+                if (low || (fire < 35 && wood > 0)) { tx = CX; ty = CY; go = 1; }
+                else if (scrap > 0) { tx = RXp; ty = RYp; go = 1; }
+                else {
+                    let rd = 1e9;
+                    res.forEach((q, i) => {
+                        if (!q.on || (b.ban[i] || 0) > gt) return;
+                        const dd = Math.hypot(q.x - b.x, q.y - b.y) + (q.t ? -80 : 0) + b.id * 37 % 50;
+                        if (dd < rd) { rd = dd; ri = i; }
+                    });
+                    if (ri >= 0) { tx = res[ri].x; ty = res[ri].y; go = 1; }
+                }
+            }
+            b.mv = 0;
+            if (!go) return;
+            const dd = Math.hypot(tx - b.x, ty - b.y);
+            if (dd <= 16) {
+                if (!tm && b.dCd <= 0) { act(b); b.dCd = .8; }
+                return;
+            }
+            let wx = tx, wy = ty;
+            if (!clearLine(b.x, b.y, tx, ty)) {
+                if (b.wp && Math.hypot(b.wp[0] - b.x, b.wp[1] - b.y) < 4) b.ptT = 0;
+                if (b.ptT <= 0 || !b.wp) {
+                    b.ptT = .4;
+                    const st2 = pathStep(b.x / T | 0, (b.y - 1) / T | 0, tx / T | 0, ty / T | 0);
+                    if (st2) b.wp = [st2[0] * T + T / 2, st2[1] * T + T / 2 + 4];
+                    else { b.wp = null; if (ri >= 0) b.ban[ri] = gt + 25; }
+                }
+                if (b.wp) { wx = b.wp[0]; wy = b.wp[1]; }
+            } else b.wp = null;
+            let a = Math.atan2(wy - b.y, wx - b.x);
+            if (b.jit > 0) a += b.jaw;
+            if (!tm) b.face = a;
+            mv(b, Math.cos(a) * 48 * dt, Math.sin(a) * 48 * dt);
+            b.mv = 1;
+            if (b.stk > .7) {
+                if (b.lx !== undefined && Math.hypot(b.x - b.lx, b.y - b.ly) < 4) {
+                    b.jit = .8;
+                    b.jaw = (Math.random() < .5 ? -1 : 1) * (1.2 + Math.random());
+                    b.ptT = 0;
+                }
+                b.lx = b.x;
+                b.ly = b.y;
+                b.stk = 0;
+            }
+        }
+
+        function newGame(n) {
+            gen();
+            mobs = [];
+            pl = [];
+            wood = 3;
+            scrap = 0;
+            radio = 0;
+            fire = 60;
+            tl = 300;
+            spT = 6;
+            panel = 0;
+            flash = true;
+            for (let i = 0; i < n; i++) {
+                const isBot = mode == 1 && i > 0;
+                const p = mk(i, isBot ? 2 : (i == myId ? ch : i % 4));
+                p.bot = isBot;
+                p.name = isBot ? 'PERCIVAL' : '';
+                pl.push(p);
+            }
+            me = pl[myId] || pl[0];
+            me.name = shownName();
+            try {
+                navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {});
+            } catch (e) {}
+            st = 'game';
+            stT = 0;
+            shel = [];
+            say('Survive until sunrise, or repair the radio!');
+        }
+
+        const say = s => {
+            toast = s;
+            toastT = 3;
+        };
+        function save() {
+            if (!me || mode == 2) return;
+            try {
+                localStorage.setItem('lastcamp', JSON.stringify({
+                    mode,
+                    ch,
+                    wood,
+                    scrap,
+                    radio,
+                    fire,
+                    tl,
+                    x: me.x,
+                    y: me.y,
+                    hp: me.hp,
+                    shel
+                }));
+                savedT = 1.5;
+            } catch (e) {}
+        }
+
+        function load() {
+            try {
+                const s = JSON.parse(localStorage.getItem('lastcamp'));
+                mode = s.mode;
+                ch = s.ch;
+                myId = 0;
+                newGame(mode == 1 ? 4 : 1);
+                wood = s.wood;
+                scrap = s.scrap;
+                radio = s.radio;
+                fire = s.fire;
+                tl = s.tl;
+                me.x = s.x;
+                me.y = s.y;
+                me.hp = s.hp;
+                shel = s.shel || [];
+            } catch (e) {
+                st = 'mode';
+            }
+        }
+
+        const hasSave = () => {
+            try {
+                return!!localStorage.getItem('lastcamp');
+            } catch (e) {
+                return false;
+            }
+        };
+        function end(w) {
+            win = w;
+            st = 'end';
+            stT = 0;
+            panel = 0;
+            died = !w && !!me && me.hp <= 0;
+            endTitle = w ? (radio >= 100 ? 'RESCUED!' : 'YOU SURVIVED!') : died ? 'OOPS! YOU DIED' : 'GAME OVER';
+            if (died) {
+                try {
+                    navigator.vibrate && navigator.vibrate([120, 60, 240]);
+                } catch (e) {}
+            }
+            if (mode == 2 && hostF) send('E ' + (w ? 1 : 0));
+            msg = !w ? (died ? 'The forest has taken you.' : 'The camp has fallen to the night.') : radio >= 100 ? 'The radio crackles. A rescue team is on the way.' : 'Sunrise breaks. You survived the night.';
+            try {
+                localStorage.removeItem('lastcamp');
+            } catch (e) {}
+            snd(w ? 880 : 150, .6, 'square', .2, w ? 1200 : 80);
+        }
+
+        const ang = (a, b) => {
+            let x = a - b;
+            while (x > Math.PI) x -= 6.283;
+            while (x < -Math.PI) x += 6.283;
+            return x;
+        };
+        function slash(p) {
+            if (p.atkCd > 0) return;
+            p.atkCd = .4;
+            p.atkT = .15;
+            if (p == me) snd(900, .1, 'sawtooth', .08, 200);
+            for (const m of [...mobs]) {
+                const dx = m.x - p.x;
+                const dy = m.y - p.y - 6;
+                if (Math.hypot(dx, dy) < 30 && Math.abs(ang(Math.atan2(dy, dx), p.face)) < 1.2) {
+                    if (rem(p)) {
+                        send('H ' + m.id + ' 2');
+                        continue;
+                    }
+                    m.hp -= 2;
+                    const a = Math.atan2(m.y - p.y, m.x - p.x);
+                    m.x += Math.cos(a) * 10;
+                    m.y += Math.sin(a) * 10;
+                    snd(190, .1, 'square', .15, 70);
+                    if (m.hp <= 0) mobs.splice(mobs.indexOf(m), 1);
+                }
+            }
+        }
+
+        const dash = p => {
+            if (p.dCd > 0) return;
+            p.dT = .18;
+            p.dCd = 2.5;
+            p.hurt = Math.max(p.hurt, .25);
+            snd(300, .15, 'triangle', .1, 600);
+        };
+        function act(p) {
+            let r = null;
+            let bd = 22;
+            for (const q of res) if (q.on) {
+                const dd = Math.hypot(q.x - p.x, q.y - p.y);
+                if (dd < bd) {
+                    bd = dd;
+                    r = q;
+                }
+            }
+            if (r) {
+                if (rem(p)) {
+                    send('G ' + res.indexOf(r));
+                    sfx(r.t ? 'scrap' : 'chop');
+                    return;
+                }
+                r.on = false;
+                r.rs = 35;
+                r.t ? scrap++ : wood++;
+                sfx(r.t ? 'scrap' : 'chop');
+                return;
+            }
+            if (Math.hypot(p.x - RXp, p.y - RYp) < 30 && scrap > 0) {
+                if (rem(p)) {
+                    send('R');
+                    sfx('radio');
+                    return;
+                }
+                scrap--;
+                radio = Math.min(100, radio + 12.5);
+                sfx('radio');
+                return;
+            }
+            if (Math.hypot(p.x - CX, p.y - CY) < 30 && wood > 0) {
+                if (rem(p)) {
+                    send('F');
+                    snd(120, .25, 'sawtooth', .1, 60);
+                    return;
+                }
+                wood--;
+                fire = Math.min(100, fire + 25);
+                snd(120, .25, 'sawtooth', .1, 60);
+                return;
+            }
+            const q = nearShel(p.x, p.y, 30);
+            if (q && wood > 0 && q.dur < SHEL_MAX - 1) {
+                if (rem(p)) {
+                    send('A ' + shel.indexOf(q));
+                    sfx('build');
+                    return;
+                }
+                applyRepair(shel.indexOf(q));
+            }
+        }
+
+        function tick(dt) {
+            toastT -= dt;
+            savedT -= dt;
+            let ix = 0;
+            let iy = 0;
+            if (keys.a || keys.arrowleft) ix--;
+            if (keys.d || keys.arrowright) ix++;
+            if (keys.w || keys.arrowup) iy--;
+            if (keys.s || keys.arrowdown) iy++;
+            if (joy) {
+                const dx = joy.x - joy.ax;
+                const dy = joy.y - joy.ay;
+                const dd = Math.hypot(dx, dy);
+                if (dd > 3) {
+                    const m = Math.min(dd, 20) / 20;
+                    ix += dx / dd * m;
+                    iy += dy / dd * m;
+                }
+            }
+            const l = Math.hypot(ix, iy);
+            if (l > 1) {
+                ix /= l;
+                iy /= l;
+            }
+            for (const p of pl) {
+                p.atkT -= dt;
+                p.atkCd -= dt;
+                p.dT -= dt;
+                p.dCd -= dt;
+                p.hurt -= dt;
+                if (p.mv) p.an += dt;
+            }
+            me.mv = l > .1 ? 1 : 0;
+            if (me.dT > 0) {
+                mv(me, Math.cos(me.face) * 170 * dt, Math.sin(me.face) * 170 * dt);
+                me.mv = 1;
+            } else if (me.mv) {
+                me.face = Math.atan2(iy, ix);
+                mv(me, ix * 62 * dt, iy * 62 * dt);
+            }
+            stepT -= dt;
+            if (me.mv && me.dT <= 0 && stepT <= 0) {
+                stepT = .3;
+                sfx('step', .5);
+            }
+            mobSndT -= dt;
+            if (mobSndT <= 0) {
+                mobSndT = 2.5 + Math.random() * 3.5;
+                let nm = null;
+                let bd = 190;
+                for (const m of mobs) {
+                    const d = Math.hypot(m.x - me.x, m.y - me.y);
+                    if (d < bd) {
+                        bd = d;
+                        nm = m;
+                    }
+                }
+                if (nm) sfx(MSND[nm.t], 1 - bd / 220);
+            }
+            const au = !(mode == 2 && !hostF);
+            tl -= dt;
+            if (au) {
+                fire = Math.max(0, fire - 1.2 * dt);
+                for (const r of res) if (!r.on && (r.rs -= dt) <= 0) r.on = true;
+            } else mobs.forEach(m => m.ph += dt);
+            const pg = 1 - tl / 300;
+            if (au) spT -= dt;
+            if (au && spT <= 0) {
+                spT = Math.max(3, 9 - pg * 6);
+                if (mobs.length < 2 + pl.length + (pg * 4 | 0)) spawn();
+            }
+            if (au) {
+                mobs.forEach(m => mobAI(m, dt));
+                for (let i = shel.length - 1; i >= 0; i--) {
+                    const q = shel[i];
+                    let n = 0;
+                    for (const m of mobs) if (Math.hypot(m.x - q.x, m.y - q.y) < 36) n++;
+                    q.dur -= .4 * n * dt;
+                    if (q.dur <= 0) {
+                        shel.splice(i, 1);
+                        sfx('break');
+                        say('A shelter was destroyed!');
+                    }
+                }
+                pl.forEach(p => {
+                    if (p.bot && p.hp > 0) bot(p, dt);
+                });
+            }
+            if (mode < 2) {
+                saveT = (saveT || 10) - dt;
+                if (saveT <= 0) {
+                    saveT = 10;
+                    save();
+                }
+            }
+            netTick(dt);
+            const fr = frad();
+            for (const p of pl) {
+                if (p.hp <= 0 || (mode == 2 && p != me)) continue;
+                if (Math.hypot(p.x - CX, p.y - CY) < fr) p.hp = Math.min(5, p.hp + .25 * dt);
+                if (nearShel(p.x, p.y, 30)) p.hp = Math.min(5, p.hp + .35 * dt);
+                if (p.hurt <= 0) for (const m of mobs) if (Math.hypot(m.x - p.x, m.y - p.y) < 10) {
+                    p.hp -= (m.t == 1 || m.t == 2) ? 2 : 1;
+                    p.hurt = 1.2;
+                    if (p == me) {
+                        snd(230, .28, 'sawtooth', .2, 80);
+                        try {
+                            navigator.vibrate && navigator.vibrate(90);
+                        } catch (e) {}
+                    }
+                    break;
+                }
+            }
+            if (me.hp <= 0) end(false);
+            else if (au) {
+                if (radio >= 100) end(true);
+                else if (tl <= 0) end(true);
+            }
+        }
+
+        const rem = p => mode == 2 && !hostF && p == me;
+        const rs = m => {
+            if (ws && ws.readyState == 1) ws.send(m);
+        };
+        const send = m => hostF ? rs('* ' + m) : rs(m);
+        const relay = (f, m) => rs('*-' + f + ' ' + m);
+        const fmt = p => `${p.x|0} ${p.y|0} ${p.face.toFixed(2)} ${p.ch} ${p.hp.toFixed(1)} ${p.mv?1:0} ${encName(p.name)}`;
+        function netTick(dt) {
+            if (mode != 2) return;
+            netT -= dt;
+            if (netT > 0) return;
+            netT = .06;
+            if (!hostF) {
+                send('P ' + fmt(me));
+                return;
+            }
+            send('P 0 ' + fmt(me));
+            send(`W ${wood} ${scrap} ${Math.round(radio*10)} ${fire|0} ${Math.round(tl*10)} ` + res.map(r => r.on ? 1 : 0).join(''));
+            send('M ' + mobs.length + mobs.map(m => ` ${m.id} ${m.t} ${m.x|0} ${m.y|0} ${Math.ceil(m.hp)}`).join(''));
+            send('S ' + shel.length + shel.map(q => ` ${q.x|0} ${q.y|0} ${Math.round(q.dur*10)}`).join(''));
+        }
+
+        function handle(from, a) {
+            const c = a[0];
+            if (hostF) {
+                const p = pl && pl[from];
+                if (c == 'P') {
+                    if (p) {
+                        p.x = +a[1];
+                        p.y = +a[2];
+                        p.face = +a[3];
+                        p.ch = +a[4];
+                        p.hp = +a[5];
+                        p.mv = a[6] == '1' ? 1 : 0;
+                        if (a[7] !== undefined) p.name = decName(a[7]);
+                    }
+                    relay(from, 'P ' + from + ' ' + a.slice(1).join(' '));
+                } else if (c == 'G') {
+                    const r = res[+a[1]];
+                    if (r && r.on) {
+                        r.on = false;
+                        r.rs = 35;
+                        r.t ? scrap++ : wood++;
+                    }
+                } else if (c == 'F') {
+                    if (wood > 0) {
+                        wood--;
+                        fire = Math.min(100, fire + 25);
+                    }
+                } else if (c == 'R') {
+                    if (scrap > 0) {
+                        scrap--;
+                        radio = Math.min(100, radio + 12.5);
+                    }
+                } else if (c == 'B') {
+                    applyBuild(+a[1], +a[2]);
+                } else if (c == 'A') {
+                    applyRepair(+a[1]);
+                } else if (c == 'H') {
+                    const m = mobs.find(o => o.id == +a[1]);
+                    if (m) {
+                        m.hp -= +a[2];
+                        if (m.hp <= 0) mobs.splice(mobs.indexOf(m), 1);
+                    }
+                }
+                return;
+            }
+            if (c == 'I') myId = +a[1];
+            else if (c == 'GO') newGame(+a[1]);
+            else if (c == 'P') {
+                const p = pl && pl[+a[1]];
+                if (p && p != me) {
+                    p.x = +a[2];
+                    p.y = +a[3];
+                    p.face = +a[4];
+                    p.ch = +a[5];
+                    p.hp = +a[6];
+                    p.mv = a[7] == '1' ? 1 : 0;
+                    if (a[8] !== undefined) p.name = decName(a[8]);
+                }
+            } else if (c == 'W' && st == 'game') {
+                wood = +a[1];
+                scrap = +a[2];
+                radio = a[3] / 10;
+                fire = +a[4];
+                tl = a[5] / 10;
+                for (let i = 0; i < res.length; i++) res[i].on = a[6][i] == '1';
+            } else if (c == 'S' && st == 'game') {
+                const n = +a[1];
+                const ns = [];
+                for (let i = 0; i < n; i++) ns.push({ x: +a[2 + i * 3], y: +a[3 + i * 3], dur: a[4 + i * 3] / 10 });
+                shel = ns;
+            } else if (c == 'M' && st == 'game') {
+                const n = +a[1];
+                const nm = [];
+                for (let i = 0; i < n; i++) {
+                    const b = 2 + i * 5;
+                    const o = mobs.find(q => q.id == +a[b]);
+                    const m = {
+                        id: +a[b],
+                        t: +a[b + 1],
+                        x: +a[b + 2],
+                        y: +a[b + 3],
+                        hp: +a[b + 4],
+                        ph: o ? o.ph : 0,
+                        left: 0,
+                        ch: 1
+                    };
+                    if (o) m.left = m.x < o.x || (m.x == o.x && o.left);
+                    nm.push(m);
+                }
+                mobs = nm;
+            } else if (c == 'E') end(a[1] == '1');
+        }
+
+        function closeNet() {
+            netTry++;
+            const w = ws;
+            ws = null;
+            try { w && w.close(); } catch (e) {}
+            hostF = false;
+            joined = 0;
+        }
+
+        function wrapTxt(s, x, y, sz, col, n) {
+            let ln = '';
+            for (const t of String(s || '').split(' ')) {
+                if ((ln + ' ' + t).trim().length > n) { txt(ln, x, y, sz, col, 1); y += sz + 2; ln = t; }
+                else ln = (ln + ' ' + t).trim();
+            }
+            if (ln) txt(ln, x, y, sz, col, 1);
+        }
+
+        // Put your online relay here once, e.g. 'wss://lastcamp.onrender.com'. Then players only type the room code.
+        const RELAY_URL = '';
+
+        function relayList() {
+            const sec = location.protocol == 'https:', pre = sec ? 'wss://' : 'ws://', out = [];
+            const typed = srvVal.trim().replace(/^(wss?|https?):\/\//, '').replace(/\/.*$/, '');
+            if (typed) out.push(pre + (typed.includes(':') ? typed : typed + ':5050'));
+            if (RELAY_URL) out.push(RELAY_URL);
+            if (location.protocol.startsWith('http')) {
+                out.push(pre + location.host);
+                if (!sec && location.port != '5050') out.push('ws://' + location.hostname + ':5050');
+            } else if (!typed) out.push('ws://localhost:5050');
+            out.push('ws://localhost:5050');
+            return out.filter((v, i) => out.indexOf(v) == i);
+        }
+
+        function joinGame() {
+            if (joinCode.length < 4) { netMsg = 'Enter the 4-letter room code first.'; return; }
+            connect('JOIN ' + joinCode);
+        }
+
+        const ERRS = { 'no such room': 'No room has that code. Check it with the host.', 'room is full': 'That room is full.', 'host left': 'The host left the camp.' };
+
+        function connect(first) {
+            closeNet();
+            const list = relayList(), tk = ++netTry;
+            mode = 2;
+            hostF = first.startsWith('HOST');
+            joined = 0;
+            netMsg = 'Connecting...';
+            const attempt = i => {
+                if (tk != netTry) return;
+                if (i >= list.length) {
+                    netMsg = 'Cannot reach the server. Start TheLastCampServer on this PC first (it uses localhost:5050).';
+                    srvAsk = true;
+                    ws = null;
+                    return;
+                }
+                let w, opened = false;
+                try { w = new WebSocket(list[i]); } catch (e) { attempt(i + 1); return; }
+                ws = w;
+                const to = setTimeout(() => { if (!opened) try { w.close(); } catch (e) {} }, 3500);
+                w.onopen = () => {
+                    opened = true;
+                    clearTimeout(to);
+                    if (srvVal.trim()) try { localStorage.setItem('lcserver2', srvVal.trim()); } catch (e) {}
+                    netMsg = 'Connected...';
+                    w.send(first);
+                };
+                w.onerror = () => {};
+                w.onclose = () => {
+                    clearTimeout(to);
+                    if (tk != netTry || ws != w) return;
+                    if (!opened) attempt(i + 1);
+                    else if (st == 'lobby' || st == 'game') netMsg = 'Disconnected from relay';
+                };
+                w.onmessage = e => {
+                    try {
+                        const l = e.data;
+                        if (l.startsWith('CODE ')) { code = l.slice(5); netMsg = ''; st = 'lobby'; return; }
+                        if (l.startsWith('ERR')) {
+                            const er = l.slice(4) || 'error';
+                            netMsg = ERRS[er] || er;
+                            if (st == 'game') { end(false); msg = netMsg; } else st = 'mp';
+                            return;
+                        }
+                        if (!hostF) {
+                            if (st == 'mp') { st = 'lobby'; netMsg = ''; }
+                            handle(0, l.split(' '));
+                            return;
+                        }
+                        const sp = l.indexOf(' '), id = +l.slice(0, sp), rest = l.slice(sp + 1);
+                        if (rest == 'JOINED') joined++;
+                        else if (rest == 'LEFT') joined = Math.max(0, joined - 1);
+                        else handle(id, rest.split(' '));
+                    } catch (err) {}
+                };
+            };
+            attempt(0);
+        }
+
+        const fEl = [document.getElementById('fa'), document.getElementById('fb')];
+        const fCur = [null, null];
+
+        function syncFields() {
+            const cfg = [fa, fb], r = c.getBoundingClientRect(), k = r.width / W;
+            for (let i = 0; i < 2; i++) {
+                const el = fEl[i], f = cfg[i];
+                if (!f) {
+                    if (fCur[i]) { el.style.display = 'none'; fCur[i] = null; }
+                    continue;
+                }
+                const key = f.id + '|' + k.toFixed(3), isNew = !fCur[i] || fCur[i].id != f.id;
+                if (!fCur[i] || fCur[i].key != key) {
+                    const sty = el.style;
+                    sty.display = 'block';
+                    sty.left = f.x * k + 'px';
+                    sty.top = f.y * k + 'px';
+                    sty.width = f.w * k + 'px';
+                    sty.height = f.h * k + 'px';
+                    sty.fontSize = Math.max(16, f.h * k * .55) + 'px';
+                    sty.textTransform = f.id == 'code' ? 'uppercase' : 'none';
+                    el.placeholder = f.ph;
+                    el.maxLength = f.max;
+                    el.dataset.id = f.id;
+                    if (isNew) el.value = f.get();
+                    fCur[i] = { key, id: f.id };
+                    if (isNew && f.focus && !touchOn) setTimeout(() => el.focus(), 60);
+                }
+            }
+        }
+
+        fEl.forEach(el => {
+            el.addEventListener('input', () => {
+                const id = el.dataset.id;
+                if (id == 'name') { playerName = el.value.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 12); el.value = playerName; nameMsg = ''; }
+                else if (id == 'code') { joinCode = el.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); el.value = joinCode; }
+                else if (id == 'srv') srvVal = el.value.trim();
+            });
+            el.addEventListener('keydown', e => {
+                e.stopPropagation();
+                if (e.key == 'Enter') {
+                    el.blur();
+                    if (el.dataset.id == 'name') confirmName();
+                    else if (el.dataset.id == 'code') joinGame();
+                }
+            });
+            el.addEventListener('pointerdown', e => e.stopPropagation());
+        });
+
+        let last = performance.now();
+        function loop(n) {
+            const dt = Math.min(.05, (n - last) / 1e3);
+            last = n;
+            gt += dt;
+            ldt = dt;
+            stT += dt;
+            if (st == 'game' && (!panel || mode == 2)) tick(dt);
+            render();
+            requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+        function fit() {
+            const s = Math.max(.5, Math.min(innerWidth / W, innerHeight / H));
+            c.style.width = W * s + 'px';
+            c.style.height = H * s + 'px';
+            ov.style.width = W * s + 'px';
+            ov.style.height = H * s + 'px';
+            const r = window.devicePixelRatio || 1;
+            ov.width = Math.round(W * s * r);
+            ov.height = Math.round(H * s * r);
+        }
+
+        addEventListener('resize', fit);
+        fit();
+        // Phones: first tap anywhere goes fullscreen and locks landscape (Android Chrome)
+        if (matchMedia('(pointer: coarse)').matches) {
+            const autoFull = () => {
+                removeEventListener('pointerup', autoFull, true);
+                removeEventListener('touchend', autoFull, true);
+                goFull();
+            };
+            addEventListener('pointerup', autoFull, true);
+            addEventListener('touchend', autoFull, true);
+        }
+        const pos = e => {
+            const r = c.getBoundingClientRect();
+            return {
+                x: (e.clientX - r.left) / r.width * W,
+                y: (e.clientY - r.top) / r.height * H
+            }
+        };
+        c.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            c.setPointerCapture(e.pointerId);
+            if (e.pointerType == 'touch') touchOn = true;
+            const p = pos(e);
+            startMusic();
+            if (st == 'char') swipeX = p.x;
+            if (touchOn && !fullTried) {
+                fullTried = true;
+                goFull();
+            }
+            for (let i = btns.length - 1; i >= 0; i--) {
+                const b = btns[i];
+                if (p.x >= b.x && p.x < b.x + b.w && p.y >= b.y && p.y < b.y + b.h) {
+                    lit[b.s] = gt;
+                    snd(800, .04, 'sine', .12);
+                    b.fn();
+                    return;
+                }
+            }
+            if (st == 'game' && !panel && p.x < W * .55 && p.y > 40 && !joy) joy = { id: e.pointerId, ax: p.x, ay: p.y, x: p.x, y: p.y };
+        });
+        addEventListener('contextmenu', e => e.preventDefault());
+        c.addEventListener('pointermove', e => {
+            if (st == 'char') {
+                const p = pos(e);
+                if (e.pointerType == 'mouse' && !e.buttons) {
+                    if (p.y > 34 && p.y < 146) ch = Math.max(0, Math.min(3, p.x / 80 | 0));
+                } else if (swipeX !== null) {
+                    if (p.x - swipeX > 22) { ch = Math.min(3, ch + 1); swipeX = p.x; }
+                    else if (swipeX - p.x > 22) { ch = Math.max(0, ch - 1); swipeX = p.x; }
+                }
+            }
+            if (joy && joy.id == e.pointerId) {
+                const p = pos(e);
+                joy.x = p.x;
+                joy.y = p.y;
+            }
+        });
+        const up = e => {
+            swipeX = null;
+            if (joy && joy.id == e.pointerId) joy = null;
+        };
+        c.addEventListener('pointerup', up);
+        c.addEventListener('pointercancel', up);
+        addEventListener('keydown', e => {
+            if (e.target && e.target.tagName == 'INPUT') return;
+            const k = e.key.toLowerCase();
+            keys[k] = 1;
+            startMusic();
+            if (st == 'title' && stT > 3.6 && (k == 'enter' || k == ' ')) startGame0();
+            if (st == 'name') {
+                if (k == 'enter') confirmName();
+                else if (e.key.length == 1) fEl[0].focus();
+            }
+            if (st == 'char') {
+                if (k == 'arrowleft' || k == 'a') ch = Math.max(0, ch - 1);
+                if (k == 'arrowright' || k == 'd') ch = Math.min(3, ch + 1);
+            }
+            if (st == 'beast') {
+                if (k == 'enter' || k == ' ' || k == 'arrowright') beastNext();
+                if (k == 'arrowleft' && beastPg > 0) beastPg--;
+                if (k == 'escape') beastGo();
+            }
+            if (st == 'instr' && (k == 'escape' || k == 'enter')) st = instrReturn;
+            if (st == 'lore' && (k == ' ' || k == 'enter')) {
+                st = 'mode';
+                stT = 0;
+            }
+            if (st == 'game') {
+                if (k == ' ' || k == 'j') slash(me);
+                if (k == 'e' || k == 'enter') act(me);
+                if (k == 'shift' || k == 'k') dash(me);
+                if (k == 'f') flash = !flash;
+                if (k == 'b') build(me);
+                if (k == 'i') panel = panel == 1 ? 0 : 1;
+                if (k == 'm') panel = panel == 3 ? 0 : 3;
+                if (k == 'escape') panel = panel ? 0 : 2;
+            }
+            if ([' ', 'arrowup', 'arrowdown'].includes(k)) e.preventDefault();
+        });
+        addEventListener('visibilitychange', () => { if (document.hidden && st == 'game') save(); });
+        addEventListener('pagehide', () => { if (st == 'game') save(); });
+        addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = 0;
+        });
+        const ART = {
+            RICO: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABBklEQVR4nO2VwQ2CQBBFvdAEZ2yCumzGgzejsQMb8LAd2ABagkdlSYbMjrPLEv6sHtjkJwwK7w1Zhs26lqzz5fT2+QmU0j26oDaT4sCcQEWm4LHfoAK5ncOfwly4/H8xAer2dTuqGxQqoHVJcEp/qd0T0AQ4HCYwBd9VVSDgay4A757X/vhQ18MxQX1tJqDJ3Ns2EPA1F1gElxIpGYI+r/sxUAE5CTUBDocKpET4BlTg9h8k/v6bw+nGzjk+3VKxgctsm2YIP2chocIzBGASswWYCFZAyki4mQCfcDkC0GmYEtBiLtD0XWux3ITjq5gSoKDBXyJ/IRCbgKUFcs7jBSIbrAgcvj73Zy5ptDvtvQAAAABJRU5ErkJggg==',
+            DRACO: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABIElEQVR4nO2WsQ3CMBBFGYAC0aVIiaBLEB1TZAmWYRskUrEIomEU0EX61tmxY0d8Wymw9BXfydx/F5w4q/8gjI9H5cwuu7Wl8yYfyFDcNQxJgXC6nmMO0QBineYEiBpJPieEtzhMRdfT1opdoF8AvLcaplPSEDQA3XkMABA0gFD3siYUUwDc/7OuayMxaZrGykkseZkzAKxNqLsHQNd1Zi5XiYsAwATmvhx+S3sXoFjKBgQA60wYHUAzzOkjCpLd/Ni2gwLfAfmOYm3+uN/M/P16DqqqygfHA9DmUAIADcIUT70DCoQD0Pf9IBdmsQBYSwPQj5mYwdAFkCvWZwPQpnqOONfjaIoe9vtJsY1HIIsACL0BSwOk5PkAgQ1WxJw+vuOadGc0/b5BAAAAAElFTkSuQmCC',
+            PERCIVAL: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABF0lEQVR4nO2VMQ6CMBiFHdHFhMXNwYE74OLmGRwcHDyEm6uXMHH2AB6GmXtg/iZtHtBiwddqlCYv0L9Jv4+mtJOxDWiVZ8IA77tNVZ4PL8OS8AaGEBgMZ0l4Qbok3xHoBXPVowrYxmgCenINagLlvXrcWuO0PYACAtJBGNZZZ0FNIE1TE4Hk+brVl6f0GXAj0FxqDdwfT+ZdntKPJoBfroO1oALl9WKCAlinC9R2vkXAAqddRs7bzrYCIW5C1aZJoiberhYqMa9iBV/OZwaOKYpCBWt0CRGwwV2hrkRfuBYAEa4A7oP/EMBNKPEVYJ6GSgBvuSzLnHAZC/U7mkkF0hU2uCXyFQK20+8TAj51voBjg0WB/2Z7Ao9ADmdPlLOUAAAAAElFTkSuQmCC',
+            ZACHARY: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABIElEQVR4nO2VzQnCQBCFPQgePHpSUBAEG/DmwatYgujNIgSxBbvwJNiFYAlWYBMGohOYMJns5AffriIuPJLdwH5fhs2k8R9vjlglGCjJ/TxMctq3kviSyMBcIThfkdUoBVuBCegSh5bIldgSsuQgEq7NaS267UorBK2ChmsBmmsRuICEN0eLzOmnOT/jda8C7fkhhcm5NwEJp8wuD3POZwcmwD0hur4AHAFPIp6hWzNvVFcAPoqr4OntzR+SS8A7vNsfxtPl0flnVMHDCazTGw/SdCZrLYcTcMErCOC+groCQgQroGUsAbqHCtCGvGkVAe6GMAHZYj8uwNWgaAFRevyXwFlttoVBg3MiXyFgdcAgAtSOHRBrHS9gHLAg8N8cT3RFAfhUoaVGAAAAAElFTkSuQmCC',
+            MANANANGGAL: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAC70lEQVR4nO2YvU4DMQzH+wSVOnSiEyMzEn2Jvhms8AbsSF0Z25GRx2DqwgTkRCJfaju2k/uOJeu43CXn/y+Ok7KqVq1atWrVqlWrVq1atWoLtR+jj83MOqwdtRBCv+12K3LhN3Livwbw8vdh51hb3J4KEIo5HA4mBzCSwmGcPlYmdnpAbCAKDjZormgMQgqAIea8AQmyAUAp8QQA68yLLSmWWxZdAAAQiqY9CQAbTAqhNACQBaJMxICYAWg+5tsls8nVCawdAsDi4WbfDIDLAuqZBMDX53vjsVAOjrun4uBiiWDY1j+XBRoAULwHAIWm4HDiUzFr6oAq3S0Avo+3jUOh7oq1SwEoapQegCTFOAAwraUAYggUAGlcmmWgIq0B4IXt9w+NxwBg+6wBaDIAQtBkYecAuC2Jqu6wAMaznHrOAZBMTFEAqf1YAmCz2TQOAbh7LQDsh1snAJBDhRhAPMOu7+VyaQmEbfA9CQAsvqIAYsGpQKiDDBQnBQAhDA4Aeuq5tA5g7dRY2hiKAACdVB93njoJUk6NNTSA1DtXoKgfNFrxCABxDFkAmOOj6OPYMqAEpnxIANIs6QuAJAZNNhcDEJ5x/xg5nU4tf356vGqbAgDuvRCMExNDiMViEHxf/zfxn2HrUi0LAKM+EABrQZ82AGb2QyxqAMLBW2KR+wAAQpACcG3OCQBxjSgxofmdMAAwC9xVCuDj/qZxochxAvAivBBMPOZxXwBCa6YlkAOg6RsHnwPg9W47GQDozCGpLHIIwLkVgGUXsABoifWz5q8eALznvGQGWDM53glEAKJgW6Ljd/oEYC2kuQBW5/OZFIU5hOf7TgaACxhcqb36qk4g4sN7biwPwiBAc1YQDSJ5F17RdxIzn/P9kn3RgUoYtyOUtK7GzbKctWwBMDrrE8DoLPdIO3kLBe9tve6jBozSWsdcuAMghXH2Rv5qXNoyQUH838/WUjM/W/FB6HG3a3xpxXCRxQ4a3AIXa6MT/wtsvmzgr3yJtAAAAABJRU5ErkJggg==',
+            KAPRE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACc0lEQVR4nO2av07DMBDGETNrN8TUlb1DpUqgZOjC1qHdmXgCxAuwMCFGFl6hD8JD9D0Cl+qqq3vnnEOoz44/6ZMaJ43y/fwnttuLoqKiIiNqAq3Ser3+pB76of+qo1DT6VRl8h2v3PAWAHhrNXcAQSGHgGAJwKDhHQiirAAQww8BRdMVYuokZJ8+nyoAX7/19mv3WsV3WnFNPmq/PyOAFkISAHxQnl+vW9PP1BwMPJ7NZo0EINrgJ9WuW8aF9Znep6qq1gBgtVp9UZsDwNV+aPhsAMCxZLe5c10Eg6MXi0Wz2WxOAMCDmJgAcQAw0Ntk0poGp+fcFgC1jbW/XC5bAwCu5qMPhNKoTiF8/34Gc82dKwcAEL6u64Pn83nbAiyFB40eAMoLQOPHp7uDAQA0ewiOXYp7DcYM7Ep8f9OQu93uJDiWYXAw9HcAgKM/DR81pUIqAPQclmGt44AHhjK81mJ41XQWyiAkGo7fb/fGc9jnOQDoaCkFidPYjvn8EQCEIAGAbuHc34x6A8BjCiE1AOzo3mffDwF8PNRHAx5aWChFV+c8HqzdFdreXDUv93PV4ilLANKbw9PKoitoRacF4N43eQDacSFrAD4Q0lK4AEgVgAYMXKPdLssWgHafMEsAobCyBdAXEpTFjb5XAVAAFAD8A2+ry4NHD4BzV2h6rWkA0sN1AQixZQCgswBwfy4zBYCz24yHAODYtP4DQFISB7QCQGHLA55Gna+10NdjFgC0ELIGoIFQAOQOoAvEaADQ2WLA9lkSCtodDrw+CYUGKgBCW0ysYFp5//jIAejhpGR+PX8OSWv60SnppjykRg+gKIZ+ANj6XHIsQCkcAAAAAElFTkSuQmCC',
+            TIKBALANG: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9klEQVR4nO2YwW3DMAxFe8i5p67QEbpM0Rk6g2forYcO0zE6TQoZDSAzIvkpC7W+rA8QiGUlyH+mKMoPU8fpKkKO0UszIo1v4u3jaRwABTOmeRH0WgFkEGqDVqcHkGQCCACi1Z3ZUhiFkBoAZH4CKEAojNEJMv9zuayhAWDuCVQzUQCsECAAgSVAByEEQDP/9f2+ib85FIIBaDuAND8EgNLTRs0zATALmvX0b5GZPR8AYbY01r3MPV27zr+jpD6F+aTdAJSgEQRA6fgoDSepT66mEcqCQu45XzMLpD+FoD1fizwzlP6ga0Fpjfb/jMfh8Bkfmc8CIPS2pwZA72+Gqk3VzKUBoD3BUwFAtkIPngKyK1VVdq8VdmpBV/JSFdoGtaxhXwLQLmE1QL0DQIqV2wdonSAFAKeSbyChS4FpCYQAeCdBDwgNAPEnYcMTANAMTQATACGAPcEOYP38+RqP0wO4QaAHUGteywImALBJNAuy2tCNzFdXrQCIVro7lao3nP4oAPHb3atZBggQNAoXOnTeoa4Cag6ALQtCACKgjrWFqxmAdD8LGjUpgozGc1UBSNciaBVd20OYzjVEr79H4fN+Nj6MzJNi70fdFjo1gNXQ88vjJvL0N+7R685cyaw2PgKI67IsZnhz0v2DPewS/NbXian/0i8epbvlDI+1IgAAAABJRU5ErkJggg==',
+            MULTO: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADh0lEQVR4nO2bS3LiQAyGZ8EpZjNLCg7AAq5FpigmbCiGLatUjksiF+qSf6R+mHanG6wqLQKm3f8n9Ut2fk022WSTFbLrg968dUL+n07O/+33qp++vyPnv+l38/n8N/kPa3jIHIDD+/v1fD47oT5HAC1CcGksxccCIG99OPRSX6Y4+uVyUV0B0YT1oobjOwWAdNFm9RYd+VjxAKF6c+J94z1FeEtZ4NI+NMHxhPhsEK6Hw+EOAC9pODf4soFWDXYEdWujSusARCxnnWsASCxeR7BeAoAmXl7bJAAt/dl5GLB437VPDyDm2toBdB2bALw6gO12+5IAXEdTAOAq4FsxmgGg7QJ90UcAFrCaAQSFpewErcxRlsEqIPQ6OZvNgpHF47GvDiBLYzUCuIsqAfBF1XcqlDVDuTMkx/MA3LcO8dRJ33HXEq61hWcD4zD0YwB6HeBzP3YydNzlaGsAtCyoBUBQuOy0BcASrgGwagKijbLiZbXHEq+d4VsHEBQvJ6wQAL5ee0jC1aLqAFjCccNDZwECEFPe4iMwbp5Cv6P7HI/HYpui3pgPbVr+vr2562JqfqH5QltN6D68MywCQIu+ttWlTslrYkWlFEf5frvdrgiAJPFYu4sdCilOwiWAsSHcpb520pPjeEwA1H5xAHJGR/F09NUAyH18bgCccSUAuElNCifRLNyKPn9OnRz6FMj3oJTaLQJAikfh7FwAkZ3l73IB4D7I9EcAm80m+/sDTrQUL15WcJ+jSL42NwCrnJ49A1AgRN4ND008Z0suACie2+R2sx+KlsvlSt4MT16+6ONQeRQALrec+qNEn1ObAXx+fFh01ejLuQI7mwoBawc49vm8kDX6FoDb3+rQCEV/CADrZSkUn33sIwD2xWLxxwKAHZZzxXq1SgagiQ9EP5/B62hOvAQg018T/wiAAeLHPQP4Nkb48EPbIyCAUAUYhcsJuLR4zbpzPu4LrM2RBSBULUbhMvrQfjnhMu1DorHTofeEBogvasnChwAwItz7fL1ey3monHiPe68LAeDvLfHchqg0VWtJ4mOEk8NSXK3ddVzO4D7xMcOo9rfDvakvAXiibrZTs/jgxCcBeKKuttXC/wWoEyHV6Pff6S+dJzF4zh+C2Y7dtshdx1E81RGVlyKktSucTBNPohOi2qbwm3Wdp3I5i48Q/DTiyVIi/fw2RjV2sskmG92+ALo82zGZfyfmAAAAAElFTkSuQmCC'
+        };
+    </script>
+</body>
+</html>
