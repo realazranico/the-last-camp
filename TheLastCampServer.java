@@ -43,7 +43,7 @@ public class TheLastCampServer {
                 if (l.startsWith("HOST")) {
                     Room r = new Room();
                     try {
-                        r.max = Math.max(2, Math.min(4, Integer.parseInt(l.substring(4).trim())));
+                        r.max = Math.max(2, Math.min(10, Integer.parseInt(l.substring(4).trim())));
                     } catch (Exception e) { }
                     r.code = newCode();
                     r.host = p.c;
@@ -63,7 +63,9 @@ public class TheLastCampServer {
                             p.c.send("ERR room is full");
                             return;
                         }
-                        p.id = r.next++;
+                        int nid = 1;
+                        while (r.cl.containsKey(nid)) nid++;
+                        p.id = nid;
                         p.room = r;
                         r.cl.put(p.id, p.c);
                     }

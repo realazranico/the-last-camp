@@ -74,6 +74,8 @@
         <canvas id="ov"></canvas>
         <input id="fa" class="fld" type="text" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
         <input id="fb" class="fld" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+        <input id="fc" class="fld" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+        <input id="fd" class="fld" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
     </div>
     <script>
         const W = 320;
@@ -91,8 +93,8 @@
         dk.width = W;
         dk.height = H;
         const d = dk.getContext('2d');
-        const NAMES = ['RICO', 'DRACO', 'PERCIVAL', 'ZACHARY'];
-        const SH = ['#d9534f', '#3b9ae1', '#f0ad4e', '#9b59b6'];
+        const NAMES = ['RICO', 'DRACO', 'PERCIVAL', 'ZACHARY', 'CHUCK', 'CAITLYN', 'JAZZ', 'RORRIE', 'EVE', 'GAVIN'];
+        const SH = ['#d9534f', '#3b9ae1', '#f0ad4e', '#9b59b6', '#c0392b', '#6c3483', '#7b4a2a', '#27ae60', '#bdc3c7', '#16a085'];
         const MHP = [4, 12, 6, 4];
         const MSP = [40, 22, 34, 28];
         const ART = {
@@ -100,10 +102,17 @@
             DRACO: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABIElEQVR4nO2WsQ3CMBBFGYAC0aVIiaBLEB1TZAmWYRskUrEIomEU0EX61tmxY0d8Wymw9BXfydx/F5w4q/8gjI9H5cwuu7Wl8yYfyFDcNQxJgXC6nmMO0QBineYEiBpJPieEtzhMRdfT1opdoF8AvLcaplPSEDQA3XkMABA0gFD3siYUUwDc/7OuayMxaZrGykkseZkzAKxNqLsHQNd1Zi5XiYsAwATmvhx+S3sXoFjKBgQA60wYHUAzzOkjCpLd/Ni2gwLfAfmOYm3+uN/M/P16DqqqygfHA9DmUAIADcIUT70DCoQD0Pf9IBdmsQBYSwPQj5mYwdAFkCvWZwPQpnqOONfjaIoe9vtJsY1HIIsACL0BSwOk5PkAgQ1WxJw+vuOadGc0/b5BAAAAAElFTkSuQmCC',
             PERCIVAL: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABF0lEQVR4nO2VMQ6CMBiFHdHFhMXNwYE74OLmGRwcHDyEm6uXMHH2AB6GmXtg/iZtHtBiwddqlCYv0L9Jv4+mtJOxDWiVZ8IA77tNVZ4PL8OS8AaGEBgMZ0l4Qbok3xHoBXPVowrYxmgCenINagLlvXrcWuO0PYACAtJBGNZZZ0FNIE1TE4Hk+brVl6f0GXAj0FxqDdwfT+ZdntKPJoBfroO1oALl9WKCAlinC9R2vkXAAqddRs7bzrYCIW5C1aZJoiberhYqMa9iBV/OZwaOKYpCBWt0CRGwwV2hrkRfuBYAEa4A7oP/EMBNKPEVYJ6GSgBvuSzLnHAZC/U7mkkF0hU2uCXyFQK20+8TAj51voBjg0WB/2Z7Ao9ADmdPlLOUAAAAAElFTkSuQmCC',
             ZACHARY: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABIElEQVR4nO2VzQnCQBCFPQgePHpSUBAEG/DmwatYgujNIgSxBbvwJNiFYAlWYBMGohOYMJns5AffriIuPJLdwH5fhs2k8R9vjlglGCjJ/TxMctq3kviSyMBcIThfkdUoBVuBCegSh5bIldgSsuQgEq7NaS267UorBK2ChmsBmmsRuICEN0eLzOmnOT/jda8C7fkhhcm5NwEJp8wuD3POZwcmwD0hur4AHAFPIp6hWzNvVFcAPoqr4OntzR+SS8A7vNsfxtPl0flnVMHDCazTGw/SdCZrLYcTcMErCOC+groCQgQroGUsAbqHCtCGvGkVAe6GMAHZYj8uwNWgaAFRevyXwFlttoVBg3MiXyFgdcAgAtSOHRBrHS9gHLAg8N8cT3RFAfhUoaVGAAAAAElFTkSuQmCC',
+            CHUCK: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA80lEQVR4nO2V0Q3CMAxE2SdrsAjTsA8jlCkiMUl/SoLqyrnUYCRfQIhIp6ZplXt1bPfwH++M+XRctD4OMBzEAhCI+VbmRVTzMu30eLaarwCxENo857xJm6JCITzmKaVNlChoAG28XM6NBICRC405Gu9BhANcp6kBqGvaWO5pABiB4QAa4hkAKwndeUAFqHnwCoIJsFuOBgDHXMvqhlRz+fruf9C2YE4FyPnjFecMCNO8XnEO0YlNPI/kfQqAB4YCIGGWzXXo8UhoEZDN0Rjz4iuOgFIJWI5WKUYbm8dh9QM6AHS8riOOBPCsxwMYCTbE/PfGHRQrTelaRMiiAAAAAElFTkSuQmCC',
+            CAITLYN: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABFElEQVR4nN3XMQrCMBQG4O5ihw7eoINBMvUCDi6CgxcQvIGbR3DwVJ4s8gIJr0le0tL3UjHwIyml/0fTVNrMGCaRKsOW3XfvUWoBouIAQIUXcG2fNq686zozbM5kOBG+1AFK5dwIsvy4vUWRQHhAqZyCLEX4JUiVH5qTjZtf2keEqAKAmM/LAkIEyzJAUgAoDeMQENaHMQWA47jczTFiFQBGiAHCQmmAR+TWP8RwAyxibYBHlMrhRJE74ADwmytH5/OW75vBpvB3zH/bcXkYrfVoLoEgywsAvi04F4AgvIAUpjoACnMRB0x5CSW25DIAvnjf99lIbUd/UaVUNtzFEeQnANQbsDZgynF+APGAVf1g/Z/xBZrEnudjc50YAAAAAElFTkSuQmCC',
+            JAZZ: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAtklEQVR4nO2UzQ2AIAyF3YWjF1iGVRzBVTw7jOvgT4IhKqWaPiDEJu8gafy+AKX7i1taa2etTWbvg8B9UnAfmAA3ogJL3zsfChr2iYApQCziu/Bl+xFHURR+CLh5ZGfvl4TXKXBdC7/bFKCAOQRe3YNmBVgSUHiYIvALiAp2AhhHUPwZFpW4g6bhWWBb9/0QAe4UtC2glCIDFzDGkEGN4/lTpgCs6hCIvYC5BTjr8gKRC5YFDqkVt1IA5ija8VAAAAAASUVORK5CYII=',
+            RORRIE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABLElEQVR4nOWWMQ7CMAxFOQM3YEFM3RgQG4dgZmdmZGNkY6s4ARsSh+ACXSsxMHOEIkf6les2aSTsCGikrzZW4//iJm1Gv9aqSNmYr+/LlhbnSUsWENHmFhCd5hygK5YUQIJoQ7RMQyDaAL0ln+7HTkkApMi4Kg5OEsSsAj4ADpIEYDc7NQCoLythCnBcXRoA1Mc9jTMFIOPbpmiUnvdp3PM1d/oUwhkiGYnMH9etEwdAjIQKqAIgITcKAahVgGbMKyBXvRT+iGprgK9qusIgZK66C2AKkCzLes8DmgD1IQTmkJw94tqvwAFQYgnAIXhMVEOleQG6hOfVAXjyYQPkeR4UPcO2pA4A3+dlWTqRGe65rI7nddJIALP2HQC+L2BqgJi4PoBngSUx/8/2BmYXXHC/5Fh4AAAAAElFTkSuQmCC',
+            EVE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABTUlEQVR4nO2XsQ3CMBBFkZggFUUSlCJRVmEVRmEBOpQVKFKwAAu4o2UGeqOzZOtsn41R7kjDSV/xUfi/Ozt22HwRulAiocdxLJIEiL7Nc2TUdV0JCA+AUsoIG8MTC//GCWGMoQMWAitVPReEZwxjnE/TlF0CgFjaAVcJrhogwFyrMwnBuQTeZDC2lVsASQhywrqunenudPQAIGcFCKu35iAwu162DqBtW5OzQ1DmVo/7Psq5D6VkB0Cv5yHKoROch5F3uFBdoAQQrG9CbhlyEKwAeLJP5vhmZDkNg83klDGnrvBF4Uztfvj1N4GrOLwBKUlAuBYPw2BUCMD3PRACYFEAif2wHADGFAQGEQeoqsooBSIO0Pe9kQUJgcQBMAQFI/U6ukmbpvFAwBSDcBtHIABgIbAxfkpCeB1YowsYwORUF0QBgg22yv/Ef7DGG3peEJ6DorLzAAAAAElFTkSuQmCC',
+            GAVIN: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABL0lEQVR4nN2WvQ3CMBCF09PSUCBRRERQMAF70DFCNiENHQ07UBExBqxAwQSUQbb0wvkvJNJzAlh6in22/D6fT1aSX2zVB8U13h3X1fWRBxULwjFqAmFDNBr64irGgmh9anuOBeE1mkxH1Xw51pJxO0YDwMbKeLWYaak+JOfpADgZTlndTzWEkhoj/YBgATipV2YhyRpAnwKAzWyAZL9xxrL4qFfgBbjkzhhrZPaiXcP2eTYA5JiZAQNCA9wOb8k6EPEoALiOLgDUKwCAAeEBEIa8DPjkA2AZBiGKotDq+59Ab1qWZQ0ApWlaywPHA1DmUAcAGoQBAAj1lQCIY30UABvGBpBrBgXAa0gDkE9sGw0OIERr9aZZljWKbeyAfAVAKOV9A7SJ8wECBdaL+X+2FxmOfCxlazxfAAAAAElFTkSuQmCC',
             MANANANGGAL: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAC70lEQVR4nO2YvU4DMQzH+wSVOnSiEyMzEn2Jvhms8AbsSF0Z25GRx2DqwgTkRCJfaju2k/uOJeu43CXn/y+Ok7KqVq1atWrVqlWrVq1atWoLtR+jj83MOqwdtRBCv+12K3LhN3Livwbw8vdh51hb3J4KEIo5HA4mBzCSwmGcPlYmdnpAbCAKDjZormgMQgqAIea8AQmyAUAp8QQA68yLLSmWWxZdAAAQiqY9CQAbTAqhNACQBaJMxICYAWg+5tsls8nVCawdAsDi4WbfDIDLAuqZBMDX53vjsVAOjrun4uBiiWDY1j+XBRoAULwHAIWm4HDiUzFr6oAq3S0Avo+3jUOh7oq1SwEoapQegCTFOAAwraUAYggUAGlcmmWgIq0B4IXt9w+NxwBg+6wBaDIAQtBkYecAuC2Jqu6wAMaznHrOAZBMTFEAqf1YAmCz2TQOAbh7LQDsh1snAJBDhRhAPMOu7+VyaQmEbfA9CQAsvqIAYsGpQKiDDBQnBQAhDA4Aeuq5tA5g7dRY2hiKAACdVB93njoJUk6NNTSA1DtXoKgfNFrxCABxDFkAmOOj6OPYMqAEpnxIANIs6QuAJAZNNhcDEJ5x/xg5nU4tf356vGqbAgDuvRCMExNDiMViEHxf/zfxn2HrUi0LAKM+EABrQZ82AGb2QyxqAMLBW2KR+wAAQpACcG3OCQBxjSgxofmdMAAwC9xVCuDj/qZxochxAvAivBBMPOZxXwBCa6YlkAOg6RsHnwPg9W47GQDozCGpLHIIwLkVgGUXsABoifWz5q8eALznvGQGWDM53glEAKJgW6Ljd/oEYC2kuQBW5/OZFIU5hOf7TgaACxhcqb36qk4g4sN7biwPwiBAc1YQDSJ5F17RdxIzn/P9kn3RgUoYtyOUtK7GzbKctWwBMDrrE8DoLPdIO3kLBe9tve6jBozSWsdcuAMghXH2Rv5qXNoyQUH838/WUjM/W/FB6HG3a3xpxXCRxQ4a3AIXa6MT/wtsvmzgr3yJtAAAAABJRU5ErkJggg==',
             KAPRE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACc0lEQVR4nO2av07DMBDGETNrN8TUlb1DpUqgZOjC1qHdmXgCxAuwMCFGFl6hD8JD9D0Cl+qqq3vnnEOoz44/6ZMaJ43y/fwnttuLoqKiIiNqAq3Ser3+pB76of+qo1DT6VRl8h2v3PAWAHhrNXcAQSGHgGAJwKDhHQiirAAQww8BRdMVYuokZJ8+nyoAX7/19mv3WsV3WnFNPmq/PyOAFkISAHxQnl+vW9PP1BwMPJ7NZo0EINrgJ9WuW8aF9Znep6qq1gBgtVp9UZsDwNV+aPhsAMCxZLe5c10Eg6MXi0Wz2WxOAMCDmJgAcQAw0Ntk0poGp+fcFgC1jbW/XC5bAwCu5qMPhNKoTiF8/34Gc82dKwcAEL6u64Pn83nbAiyFB40eAMoLQOPHp7uDAQA0ewiOXYp7DcYM7Ep8f9OQu93uJDiWYXAw9HcAgKM/DR81pUIqAPQclmGt44AHhjK81mJ41XQWyiAkGo7fb/fGc9jnOQDoaCkFidPYjvn8EQCEIAGAbuHc34x6A8BjCiE1AOzo3mffDwF8PNRHAx5aWChFV+c8HqzdFdreXDUv93PV4ilLANKbw9PKoitoRacF4N43eQDacSFrAD4Q0lK4AEgVgAYMXKPdLssWgHafMEsAobCyBdAXEpTFjb5XAVAAFAD8A2+ry4NHD4BzV2h6rWkA0sN1AQixZQCgswBwfy4zBYCz24yHAODYtP4DQFISB7QCQGHLA55Gna+10NdjFgC0ELIGoIFQAOQOoAvEaADQ2WLA9lkSCtodDrw+CYUGKgBCW0ysYFp5//jIAejhpGR+PX8OSWv60SnppjykRg+gKIZ+ANj6XHIsQCkcAAAAAElFTkSuQmCC',
             TIKBALANG: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9klEQVR4nO2YwW3DMAxFe8i5p67QEbpM0Rk6g2forYcO0zE6TQoZDSAzIvkpC7W+rA8QiGUlyH+mKMoPU8fpKkKO0UszIo1v4u3jaRwABTOmeRH0WgFkEGqDVqcHkGQCCACi1Z3ZUhiFkBoAZH4CKEAojNEJMv9zuayhAWDuCVQzUQCsECAAgSVAByEEQDP/9f2+ib85FIIBaDuAND8EgNLTRs0zATALmvX0b5GZPR8AYbY01r3MPV27zr+jpD6F+aTdAJSgEQRA6fgoDSepT66mEcqCQu45XzMLpD+FoD1fizwzlP6ga0Fpjfb/jMfh8Bkfmc8CIPS2pwZA72+Gqk3VzKUBoD3BUwFAtkIPngKyK1VVdq8VdmpBV/JSFdoGtaxhXwLQLmE1QL0DQIqV2wdonSAFAKeSbyChS4FpCYQAeCdBDwgNAPEnYcMTANAMTQATACGAPcEOYP38+RqP0wO4QaAHUGteywImALBJNAuy2tCNzFdXrQCIVro7lao3nP4oAPHb3atZBggQNAoXOnTeoa4Cag6ALQtCACKgjrWFqxmAdD8LGjUpgozGc1UBSNciaBVd20OYzjVEr79H4fN+Nj6MzJNi70fdFjo1gNXQ88vjJvL0N+7R685cyaw2PgKI67IsZnhz0v2DPewS/NbXian/0i8epbvlDI+1IgAAAABJRU5ErkJggg==',
-            MULTO: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADh0lEQVR4nO2bS3LiQAyGZ8EpZjNLCg7AAq5FpigmbCiGLatUjksiF+qSf6R+mHanG6wqLQKm3f8n9Ut2fk022WSTFbLrg968dUL+n07O/+33qp++vyPnv+l38/n8N/kPa3jIHIDD+/v1fD47oT5HAC1CcGksxccCIG99OPRSX6Y4+uVyUV0B0YT1oobjOwWAdNFm9RYd+VjxAKF6c+J94z1FeEtZ4NI+NMHxhPhsEK6Hw+EOAC9pODf4soFWDXYEdWujSusARCxnnWsASCxeR7BeAoAmXl7bJAAt/dl5GLB437VPDyDm2toBdB2bALw6gO12+5IAXEdTAOAq4FsxmgGg7QJ90UcAFrCaAQSFpewErcxRlsEqIPQ6OZvNgpHF47GvDiBLYzUCuIsqAfBF1XcqlDVDuTMkx/MA3LcO8dRJ33HXEq61hWcD4zD0YwB6HeBzP3YydNzlaGsAtCyoBUBQuOy0BcASrgGwagKijbLiZbXHEq+d4VsHEBQvJ6wQAL5ee0jC1aLqAFjCccNDZwECEFPe4iMwbp5Cv6P7HI/HYpui3pgPbVr+vr2562JqfqH5QltN6D68MywCQIu+ttWlTslrYkWlFEf5frvdrgiAJPFYu4sdCilOwiWAsSHcpb520pPjeEwA1H5xAHJGR/F09NUAyH18bgCccSUAuElNCifRLNyKPn9OnRz6FMj3oJTaLQJAikfh7FwAkZ3l73IB4D7I9EcAm80m+/sDTrQUL15WcJ+jSL42NwCrnJ49A1AgRN4ND008Z0suACie2+R2sx+KlsvlSt4MT16+6ONQeRQALrec+qNEn1ObAXx+fFh01ejLuQI7mwoBawc49vm8kDX6FoDb3+rQCEV/CADrZSkUn33sIwD2xWLxxwKAHZZzxXq1SgagiQ9EP5/B62hOvAQg018T/wiAAeLHPQP4Nkb48EPbIyCAUAUYhcsJuLR4zbpzPu4LrM2RBSBULUbhMvrQfjnhMu1DorHTofeEBogvasnChwAwItz7fL1ey3monHiPe68LAeDvLfHchqg0VWtJ4mOEk8NSXK3ddVzO4D7xMcOo9rfDvakvAXiibrZTs/jgxCcBeKKuttXC/wWoEyHV6Pff6S+dJzF4zh+C2Y7dtshdx1E81RGVlyKktSucTBNPohOi2qbwm3Wdp3I5i48Q/DTiyVIi/fw2RjV2sskmG92+ALo82zGZfyfmAAAAAElFTkSuQmCC'
+            MULTO: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADh0lEQVR4nO2bS3LiQAyGZ8EpZjNLCg7AAq5FpigmbCiGLatUjksiF+qSf6R+mHanG6wqLQKm3f8n9Ut2fk022WSTFbLrg968dUL+n07O/+33qp++vyPnv+l38/n8N/kPa3jIHIDD+/v1fD47oT5HAC1CcGksxccCIG99OPRSX6Y4+uVyUV0B0YT1oobjOwWAdNFm9RYd+VjxAKF6c+J94z1FeEtZ4NI+NMHxhPhsEK6Hw+EOAC9pODf4soFWDXYEdWujSusARCxnnWsASCxeR7BeAoAmXl7bJAAt/dl5GLB437VPDyDm2toBdB2bALw6gO12+5IAXEdTAOAq4FsxmgGg7QJ90UcAFrCaAQSFpewErcxRlsEqIPQ6OZvNgpHF47GvDiBLYzUCuIsqAfBF1XcqlDVDuTMkx/MA3LcO8dRJ33HXEq61hWcD4zD0YwB6HeBzP3YydNzlaGsAtCyoBUBQuOy0BcASrgGwagKijbLiZbXHEq+d4VsHEBQvJ6wQAL5ee0jC1aLqAFjCccNDZwECEFPe4iMwbp5Cv6P7HI/HYpui3pgPbVr+vr2562JqfqH5QltN6D68MywCQIu+ttWlTslrYkWlFEf5frvdrgiAJPFYu4sdCilOwiWAsSHcpb520pPjeEwA1H5xAHJGR/F09NUAyH18bgCccSUAuElNCifRLNyKPn9OnRz6FMj3oJTaLQJAikfh7FwAkZ3l73IB4D7I9EcAm80m+/sDTrQUL15WcJ+jSL42NwCrnJ49A1AgRN4ND008Z0suACie2+R2sx+KlsvlSt4MT16+6ONQeRQALrec+qNEn1ObAXx+fFh01ejLuQI7mwoBawc49vm8kDX6FoDb3+rQCEV/CADrZSkUn33sIwD2xWLxxwKAHZZzxXq1SgagiQ9EP5/B62hOvAQg018T/wiAAeLHPQP4Nkb48EPbIyCAUAUYhcsJuLR4zbpzPu4LrM2RBSBULUbhMvrQfjnhMu1DorHTofeEBogvasnChwAwItz7fL1ey3monHiPe68LAeDvLfHchqg0VWtJ4mOEk8NSXK3ddVzO4D7xMcOo9rfDvakvAXiibrZTs/jgxCcBeKKuttXC/wWoEyHV6Pff6S+dJzF4zh+C2Y7dtshdx1E81RGVlyKktSucTBNPohOi2qbwm3Wdp3I5i48Q/DTiyVIi/fw2RjV2sskmG92+ALo82zGZfyfmAAAAAElFTkSuQmCC',
+            DUWENDE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB8UlEQVR4nO2agW2EMAxFuwkDVLoJOlNXYIcOwwBV97rKCFPjxI5D0RHH+dJXj2uC+C+JCXf3NjT0Mj2ZQ+gQ+ufx2B0BRjY0PWYgulMSNhoEEUAECMUR1+DceuUXSQ0Mx/y93oqjad3nAGRguJS58BkAuARhXvOZoAd/f767hFBb9Nagmrd2bmQqgqXQrgGUTKe2EtgvAB4ErYXE9xQAbiCIo1oCwKF5XAbi6JWmeTcAlmU5Vegss+XOYFaJRe8CAC51+rbncfQl1Wx23N8CJWUhzPMsupfRByWjqwWnxrasvxvtF/3x9RcajmkoaSlQENDfG4A9OLU0ytoMwb6sTbM6jHrO1ulPwyMAAqJZJYGtM6ESQLMQTAAsELTzwOt7Y8q6BECuPT0PvN7cnEzhSyCktnA+5qaUBLYAwHal8Niu5d2hefp3C4DPAgsA7INbY88AQMk6tQCgu0D3APi2tgZAqU/3AMLPgAEgGoAz7YmbVPbZ/qoCuLlpZZ/v0doeQAJA+rvUc5qm1SU4BrvUevEI4azdAwCHBYBr+5/hwwNwq8PtMNrogw63OB4sJAD4Gx6ApS7A/7sCQGuBpS54ePCxSP0RFDgUgMx3/ur2t0sAJGAtLJeqCaR9Xe5WtYEGgAGgNwCVH2509WHI0NBQ2/oFOoWw9NqeS0UAAAAASUVORK5CYII='
         };
         // Pictures are stored inside this file (ART), so no assets folder is needed
         const ld = n => {
@@ -114,6 +123,7 @@
         const ok = i => i.complete && i.naturalWidth > 0;
         const spr = NAMES.map(ld);
         const vspr = ['MANANANGGAL', 'KAPRE', 'TIKBALANG', 'MULTO'].map(ld);
+        const duw = ld('DUWENDE');
         const LORE = [
             'A group of teenagers went camping|during their school break.',
             'They wanted to explore nature and|enjoy a few days away from busy life.',
@@ -139,12 +149,13 @@
         const SHEL_COST = 6;
         const SHEL_MAX = 12;
         let stepT = 0;
-        let beastPg = 0, beastGo = null, beastPre = false, srvVal = '', srvAsk = false, joinCode = '', netTry = 0, swipeX = null, lastCh = -1, chv = 0, ldt = .016, fa = null, fb = null, mmC = null;
+        let beastPg = 0, beastGo = null, beastPre = false, srvVal = '', srvAsk = false, joinCode = '', netTry = 0, swipeX = null, lastCh = -1, chv = 0, ldt = .016, fa = null, fb = null, fc = null, fd = null, mmC = null;
         const BEAST = [
             { n: 'MANANANGGAL', a: 'The Winged Torso', i: ['Splits at the waist and flies at night.', 'Glides over trees and walls.', 'Wobbles in the air: time your slash.'], tip: 'Stay by the fire. It will not cross it.' },
             { n: 'KAPRE', a: 'The Tree Giant', i: ['A huge smoker that waits in the trees.', 'Very slow, but very tough.', 'Hits for 2 hearts. Do not trade blows.'], tip: 'Kite it around trees, then slash.' },
             { n: 'TIKBALANG', a: 'The Horse Demon', i: ['Half horse, half man. Tricks travelers.', 'Charges in sudden bursts of speed.', 'Hits for 2 hearts.'], tip: 'DASH sideways when it charges.' },
-            { n: 'MULTO', a: 'The Wandering Ghost', i: ['A pale spirit that floats in and out.', 'Passes straight through trees.', 'Fades in and out of sight.'], tip: 'Shelters and fire push it back.' }
+            { n: 'MULTO', a: 'The Wandering Ghost', i: ['A pale spirit that floats in and out.', 'Passes straight through trees.', 'Fades in and out of sight.'], tip: 'Shelters and fire push it back.' },
+            { n: 'DUWENDE', a: 'The Punso Dweller', d: 1, i: ['A small earth spirit that lives in a punso.', 'Not hostile, but it hates being stepped on.', 'Step on its mound: it asks a HARD question.'], tip: 'Think first. A wrong answer is a curse.' }
         ];
         let mobSndT = 0;
         let shel = [];
@@ -153,6 +164,27 @@
         let gt = 0;
         let mode = 0;
         let ch = 0;
+        let specIdx = 0;
+        let specSaid = false;
+        const lobbyIds = new Set();
+        let punso = [];
+        let quest = null;
+        const QUIZ = [
+            ['A nuno sa punso is a spirit that lives in a...', ['Mound of earth or anthill', 'Balete tree', 'Old well'], 0],
+            ['Folk belief: what saves you from a Tikbalang trick?', ['Wearing your shirt inside out', 'Whistling loudly', 'Walking backwards'], 0],
+            ['What stops a Manananggal from rejoining its body?', ['Salt or ash on its lower half', 'Water on its wings', 'Singing to it'], 0],
+            ['In nuno sa punso, what does nuno mean?', ['Elder or ancestor', 'Small thing', 'Night spirit'], 0],
+            ['How much does ONE battery add to the radio?', ['12.5%', '10%', '20%'], 0],
+            ['How much does ONE wood add to the fire (max 100)?', ['25', '10', '50'], 0],
+            ['How many seconds does the night last?', ['300', '180', '420'], 0],
+            ['What is the most shelters you can keep at once?', ['3', '2', '5'], 0],
+            ['How long until a taken wood or battery pile returns?', ['35 seconds', '20 seconds', '60 seconds'], 0],
+            ['How many seconds must you wait between dashes?', ['2.5 seconds', '1 second', '5 seconds'], 0],
+            ['Which two monsters fly through walls and trees?', ['Manananggal and Multo', 'Kapre and Tikbalang', 'Kapre and Multo'], 0],
+            ['Which monster has the most health?', ['Kapre', 'Tikbalang', 'Manananggal'], 0],
+            ['How much strength does 1 wood restore to a shelter?', ['4', '2', '6'], 0],
+            ['How much strength does a new shelter start with?', ['12', '10', '8'], 0]
+        ];
         let btns = [];
         let keys = {};
         let joy = null;
@@ -225,7 +257,383 @@
             } catch (e) {}
         }
 
+        // ===== Player accounts (saved in this browser, so they stay after the game is closed) =====
+        const ACH = [
+            ['FIRST NIGHT', 'Finish a game'],
+            ['SUNRISE', 'Survive to 6:00 AM'],
+            ['RESCUED', 'Repair the radio'],
+            ['DUWENDE FRIEND', '1 right answer'],
+            ['DUWENDE SCHOLAR', '5 right answers'],
+            ['GATHERER', 'Collect 50 items'],
+            ['TEAM PLAYER', 'Finish a MP game'],
+            ['SURVIVOR', 'Reach level 5']
+        ];
+        const FORMIDS = ['lu', 'lp', 'ru', 'rn', 'rp', 'rq', 'en', 'ep', 'ec', 'dp'];
+        let accts = {};
+        let acct = null;
+        let guest = false;
+        let F = {};
+        let formMsg = '';
+        let formOk = false;
+        let runRight = 0;
+        let runGather = 0;
+        let diedAt = -1;
+        let runInfo = null;
+        const K256 = [];
+        for (let n = 2; K256.length < 64; n++) {
+            let pr = true;
+            for (let d = 2; d * d <= n; d++) if (n % d == 0) pr = false;
+            if (pr) K256.push(Math.floor((Math.cbrt(n) % 1) * 4294967296));
+        }
+
+        function sha256(str) {
+            const m = new TextEncoder().encode(str), l = m.length, nb = ((l + 9 + 63) >> 6) << 6;
+            const b = new Uint8Array(nb);
+            b.set(m);
+            b[l] = 0x80;
+            const dv = new DataView(b.buffer);
+            dv.setUint32(nb - 4, (l * 8) >>> 0);
+            dv.setUint32(nb - 8, Math.floor(l * 8 / 4294967296));
+            const H = [2, 3, 5, 7, 11, 13, 17, 19].map(n => Math.floor((Math.sqrt(n) % 1) * 4294967296) | 0);
+            const w = new Int32Array(64);
+            for (let o = 0; o < nb; o += 64) {
+                for (let i = 0; i < 16; i++) w[i] = dv.getInt32(o + i * 4);
+                for (let i = 16; i < 64; i++) {
+                    const x = w[i - 15], y = w[i - 2];
+                    w[i] = (w[i - 16] + ((x >>> 7 | x << 25) ^ (x >>> 18 | x << 14) ^ (x >>> 3)) + w[i - 7] + ((y >>> 17 | y << 15) ^ (y >>> 19 | y << 13) ^ (y >>> 10))) | 0;
+                }
+                let [a, bb, c, d, e, f, g2, h] = H;
+                for (let i = 0; i < 64; i++) {
+                    const t1 = (h + ((e >>> 6 | e << 26) ^ (e >>> 11 | e << 21) ^ (e >>> 25 | e << 7)) + ((e & f) ^ (~e & g2)) + (K256[i] | 0) + w[i]) | 0;
+                    const t2 = (((a >>> 2 | a << 30) ^ (a >>> 13 | a << 19) ^ (a >>> 22 | a << 10)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0;
+                    h = g2;
+                    g2 = f;
+                    f = e;
+                    e = (d + t1) | 0;
+                    d = c;
+                    c = bb;
+                    bb = a;
+                    a = (t1 + t2) | 0;
+                }
+                H[0] = (H[0] + a) | 0; H[1] = (H[1] + bb) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+                H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g2) | 0; H[7] = (H[7] + h) | 0;
+            }
+            return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+        }
+
+        const hashPw = (salt, pw) => sha256(salt + ':' + pw);
+        const newSalt = () => {
+            let s = '';
+            for (let i = 0; i < 16; i++) s += (Math.random() * 16 | 0).toString(16);
+            return s;
+        };
+        const accKey = u => String(u).trim().toLowerCase();
+        const validUser = u => /^[A-Za-z0-9_]{3,12}$/.test(u);
+        const validName = n => /^[A-Za-z0-9 ]{1,12}$/.test(n) && n.trim().length > 0;
+        const validPass = p => p.length >= 4 && p.length <= 20;
+        const lvl = xp => 1 + Math.floor(xp / 600);
+        const fmtT = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+        function loadAccts() {
+            try {
+                accts = JSON.parse(localStorage.getItem('lcaccts') || '{}') || {};
+            } catch (e) {
+                accts = {};
+            }
+        }
+
+        function saveAccts() {
+            try {
+                localStorage.setItem('lcaccts', JSON.stringify(accts));
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function initAccts() {
+            loadAccts();
+            try {
+                const k = localStorage.getItem('lcsess');
+                if (k && accts[k]) {
+                    acct = accts[k];
+                    playerName = acct.name;
+                }
+            } catch (e) {}
+        }
+
+        function setSession(k) {
+            try {
+                if (k) localStorage.setItem('lcsess', k);
+                else localStorage.removeItem('lcsess');
+            } catch (e) {}
+        }
+
+        function openForm(s) {
+            F = {};
+            formMsg = '';
+            formOk = false;
+            panel = 0;
+            if (s == 'edit' && acct) F.en = acct.name;
+            st = s;
+            stT = 0;
+        }
+
+        function formErr(m) {
+            formMsg = m;
+            formOk = false;
+        }
+
+        // Create
+        function doRegister() {
+            const u = (F.ru || '').trim(), n = (F.rn || '').trim(), p = F.rp || '', q = F.rq || '';
+            if (!u || !n || !p || !q) return formErr('Please fill in every box.');
+            if (!validUser(u)) return formErr('Username: 3-12 letters, numbers or _');
+            if (!validName(n)) return formErr('Name: 1-12 letters or numbers');
+            if (!validPass(p)) return formErr('Password must be 4-20 characters.');
+            if (p != q) return formErr('The two passwords do not match.');
+            const k = accKey(u);
+            if (accts[k]) return formErr('That username is already taken.');
+            const salt = newSalt();
+            accts[k] = { u, name: n, salt, hash: hashPw(salt, p), xp: 0, games: 0, wins: 0, best: 0, bestT: 0, gather: 0, right: 0, mp: 0, ach: 0, made: Date.now() };
+            if (!saveAccts()) {
+                delete accts[k];
+                return formErr('Could not save (storage is blocked or full).');
+            }
+            openForm('login');
+            F.lu = u;
+            formMsg = 'Account created! Please log in.';
+            formOk = true;
+        }
+
+        // Login
+        function doLogin() {
+            const u = (F.lu || '').trim(), p = F.lp || '';
+            if (!u || !p) return formErr('Type your username and password.');
+            const a = accts[accKey(u)];
+            if (!a || a.hash != hashPw(a.salt, p)) return formErr('Wrong username or password.');
+            acct = a;
+            guest = false;
+            playerName = a.name;
+            savePrefs();
+            setSession(accKey(u));
+            F = {};
+            formMsg = '';
+            st = 'lore';
+            stT = 0;
+        }
+
+        function doGuest() {
+            guest = true;
+            nameReturn = 'lore';
+            F = {};
+            formMsg = '';
+            st = 'name';
+            stT = 0;
+        }
+
+        // Logout
+        function doLogout() {
+            acct = null;
+            guest = false;
+            playerName = '';
+            savePrefs();
+            setSession(null);
+            if (mode == 2) closeNet();
+            openForm('login');
+            formMsg = 'You are logged out.';
+            formOk = true;
+        }
+
+        // Read
+        function openProfile() {
+            if (!acct) return openForm('login');
+            panel = 0;
+            st = 'profile';
+            stT = 0;
+        }
+
+        // Update
+        function doEdit() {
+            if (!acct) return;
+            const n = (F.en || '').trim(), np = F.ep || '', cur = F.ec || '';
+            if (!validName(n)) return formErr('Name: 1-12 letters or numbers');
+            if (np && !validPass(np)) return formErr('New password must be 4-20 characters.');
+            if (!cur) return formErr('Type your current password to save.');
+            if (acct.hash != hashPw(acct.salt, cur)) return formErr('Your current password is wrong.');
+            const old = { name: acct.name, salt: acct.salt, hash: acct.hash };
+            acct.name = n;
+            if (np) {
+                acct.salt = newSalt();
+                acct.hash = hashPw(acct.salt, np);
+            }
+            if (!saveAccts()) {
+                Object.assign(acct, old);
+                return formErr('Could not save (storage is blocked or full).');
+            }
+            playerName = n;
+            savePrefs();
+            if (me) me.name = n;
+            st = 'profile';
+            stT = 0;
+        }
+
+        // Delete
+        function doDelete() {
+            if (!acct) return;
+            const p = F.dp || '';
+            if (!p) return formErr('Type your password to confirm.');
+            if (acct.hash != hashPw(acct.salt, p)) return formErr('Wrong password. Nothing was deleted.');
+            delete accts[accKey(acct.u)];
+            saveAccts();
+            acct = null;
+            guest = false;
+            playerName = '';
+            savePrefs();
+            setSession(null);
+            openForm('login');
+            formMsg = 'Your account was deleted.';
+            formOk = true;
+        }
+
+        function formEnter() {
+            if (st == 'login') doLogin();
+            else if (st == 'register') doRegister();
+            else if (st == 'edit') doEdit();
+            else if (st == 'delete') doDelete();
+        }
+
+        function field(slot, id, y, ph, max, pw) {
+            const f = { id, x: 70, y, w: 180, h: 20, max, ph, pw: !!pw, get: () => F[id] || '', focus: slot == 0 };
+            if (slot == 0) fa = f;
+            else if (slot == 1) fb = f;
+            else if (slot == 2) fc = f;
+            else fd = f;
+        }
+
+        // Score, level and achievements
+        function recordRun(w) {
+            const survived = (mode == 2 && me && me.hp <= 0 && diedAt >= 0) ? diedAt : Math.max(0, Math.min(300, Math.round(300 - tl)));
+            const score = survived + (w ? 300 : 0) + Math.round(Math.max(0, Math.min(100, radio))) * 2 + runRight * 50 + runGather * 5;
+            runInfo = { score, survived, level: 0, up: false, ach: [], saved: true };
+            if (!acct) return;
+            const a = acct, oldLv = lvl(a.xp);
+            a.games++;
+            if (w) a.wins++;
+            a.xp += score;
+            a.best = Math.max(a.best, score);
+            a.bestT = Math.max(a.bestT, survived);
+            a.gather += runGather;
+            a.right += runRight;
+            if (mode == 2) a.mp = (a.mp || 0) + 1;
+            const got = [];
+            const chk = (i, ok) => {
+                if (ok && !(a.ach & (1 << i))) {
+                    a.ach |= 1 << i;
+                    got.push(ACH[i][0]);
+                }
+            };
+            chk(0, a.games >= 1);
+            chk(1, w && radio < 100);
+            chk(2, w && radio >= 100);
+            chk(3, a.right >= 1);
+            chk(4, a.right >= 5);
+            chk(5, a.gather >= 50);
+            chk(6, (a.mp || 0) >= 1);
+            chk(7, lvl(a.xp) >= 5);
+            runInfo.level = lvl(a.xp);
+            runInfo.up = lvl(a.xp) > oldLv;
+            runInfo.ach = got;
+            runInfo.saved = saveAccts();
+        }
+
+        function rLogin() {
+            backdrop();
+            txt('LOGIN', W / 2, 30, 14, '#e8dcb0', 1);
+            field(0, 'lu', 40, 'Username', 12, false);
+            field(1, 'lp', 66, 'Password', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 100, 8, formOk ? '#80ff80' : '#ff6060', 1);
+            btn('LOGIN', 60, 110, 90, 18, doLogin);
+            btn('REGISTER', 170, 110, 90, 18, () => openForm('register'));
+            btn('PLAY AS GUEST', 110, 134, 100, 16, doGuest);
+            txt('Accounts are saved on this device. Guests do not save progress.', W / 2, 166, 6, '#a09080', 1);
+            btn('BACK', 4, 158, 40, 14, () => { st = 'title'; });
+        }
+
+        function rRegister() {
+            backdrop();
+            txt('CREATE ACCOUNT', W / 2, 22, 12, '#e8dcb0', 1);
+            field(0, 'ru', 32, 'Username (3-12)', 12, false);
+            field(1, 'rn', 56, 'Display name (1-12)', 12, false);
+            field(2, 'rp', 80, 'Password (4-20)', 20, true);
+            field(3, 'rq', 104, 'Repeat password', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 136, 8, '#ff6060', 1);
+            btn('CREATE', 60, 146, 90, 18, doRegister);
+            btn('BACK', 170, 146, 90, 18, () => openForm('login'));
+        }
+
+        function rProfile() {
+            if (!acct) {
+                openForm('login');
+                return;
+            }
+            backdrop();
+            g.fillStyle = 'rgba(0,0,10,.55)';
+            g.fillRect(0, 0, W, H);
+            txt('PROFILE', W / 2, 16, 12, '#e8dcb0', 1);
+            const a = acct, lv = lvl(a.xp), into = a.xp % 600;
+            const row = (lab, val, y) => {
+                txt(lab, 14, y, 7, '#ffb060');
+                txt(String(val), 84, y, 7, '#e8dcb0');
+            };
+            row('USERNAME', a.u, 32);
+            row('NAME', a.name, 44);
+            row('LEVEL', 'Lv ' + lv, 56);
+            R('#222', 14, 60, 130, 5);
+            R('#70d070', 14, 60, 130 * into / 600, 5);
+            txt('XP ' + into + ' / 600', 14, 74, 6, '#a0b090');
+            row('GAMES', a.games, 86);
+            row('WINS', a.wins, 98);
+            row('BEST SCORE', a.best, 110);
+            row('LONGEST NIGHT', fmtT(a.bestT), 122);
+            row('ITEMS FOUND', a.gather, 134);
+            txt('ACHIEVEMENTS', 160, 32, 8, '#ffb060');
+            ACH.forEach((x, i) => {
+                const on = !!(a.ach & (1 << i));
+                txt((on ? '[X] ' : '[ ] ') + x[0] + ' - ' + x[1], 160, 44 + i * 12, 6, on ? '#ffe080' : '#807060');
+            });
+            btn('EDIT', 14, 148, 70, 16, () => openForm('edit'));
+            btn('LOGOUT', 90, 148, 70, 16, doLogout);
+            btn('DELETE', 166, 148, 70, 16, () => openForm('delete'));
+            btn('BACK', 246, 148, 60, 16, () => { st = 'mode'; });
+        }
+
+        function rEdit() {
+            if (!acct) return openForm('login');
+            backdrop();
+            txt('EDIT PROFILE', W / 2, 26, 12, '#e8dcb0', 1);
+            field(0, 'en', 40, 'Display name', 12, false);
+            field(1, 'ep', 66, 'New password (optional)', 20, true);
+            field(2, 'ec', 92, 'Current password (required)', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 124, 8, '#ff6060', 1);
+            btn('SAVE', 60, 136, 90, 18, doEdit);
+            btn('CANCEL', 170, 136, 90, 18, () => { st = 'profile'; });
+        }
+
+        function rDelete() {
+            if (!acct) return openForm('login');
+            backdrop();
+            txt('DELETE ACCOUNT', W / 2, 26, 12, '#ff6060', 1);
+            txt('This removes ' + acct.u + ' and all its progress.', W / 2, 46, 7, '#e8dcb0', 1);
+            txt('It cannot be undone.', W / 2, 56, 7, '#e8dcb0', 1);
+            field(0, 'dp', 68, 'Type your password', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 100, 8, '#ff6060', 1);
+            btn('DELETE FOREVER', 50, 112, 110, 18, doDelete);
+            btn('CANCEL', 176, 112, 90, 18, () => { st = 'profile'; });
+        }
+
         loadPrefs();
+        initAccts();
         try { srvVal = localStorage.getItem('lcserver2') || ''; } catch (e) {}
         srvAsk = !location.protocol.startsWith('http');
 
@@ -435,7 +843,7 @@
         }
 
         function render() {
-            fa = null; fb = null;
+            fa = null; fb = null; fc = null; fd = null;
             TX.length = 0;
             render0();
             drawTX();
@@ -594,9 +1002,18 @@
             btns.push({ x, y, w, h, fn, s: '' });
         }
 
+        function viewP() {
+            if (mode == 2 && me.hp <= 0) {
+                const a = pl.filter(p => p.hp > 0);
+                if (a.length) return a[((specIdx % a.length) + a.length) % a.length];
+            }
+            return me;
+        }
+
         function rGame() {
-            const cx = Math.max(0, Math.min(MW * T - W, me.x - W / 2));
-            const cy = Math.max(0, Math.min(MH * T - H, me.y - H / 2 - 6));
+            const vp = viewP();
+            const cx = Math.max(0, Math.min(MW * T - W, vp.x - W / 2));
+            const cy = Math.max(0, Math.min(MH * T - H, vp.y - H / 2 - 6));
             const tx0 = cx / T | 0;
             const ty0 = cy / T | 0;
             const L = [];
@@ -715,6 +1132,30 @@
                     }
                 }
             });
+            for (const pq of punso) L.push({
+                y: pq.y,
+                f: () => {
+                    const x = pq.x - cx | 0, y = pq.y - cy | 0;
+                    g.fillStyle = 'rgba(0,0,0,.3)';
+                    g.beginPath();
+                    g.ellipse(x, y, 10, 3, 0, 0, 7);
+                    g.fill();
+                    g.fillStyle = pq.done ? '#5a4a3a' : '#8a5a2a';
+                    g.beginPath();
+                    g.moveTo(x - 10, y + 1);
+                    g.quadraticCurveTo(x - 6, y - 13, x, y - 13);
+                    g.quadraticCurveTo(x + 6, y - 13, x + 10, y + 1);
+                    g.closePath();
+                    g.fill();
+                    R(pq.done ? '#6a5a48' : '#b07838', x - 4, y - 10, 5, 2);
+                    R('#2a1808', x - 2, y - 3, 4, 3);
+                    if (!pq.done) {
+                        R('#222', x - 8 + (gt * 6 | 0) % 5, y - 1, 1, 1);
+                        R('#222', x + 6 - (gt * 6 | 0) % 4, y - 2, 1, 1);
+                        txt('?', x, y - 17 - Math.abs(Math.sin(gt * 4)) * 2, 9, '#ffd070', 1);
+                    }
+                }
+            });
             for (const q of shel) L.push({
                 y: q.y,
                 f: () => {
@@ -788,6 +1229,11 @@
         }
 
         function hud() {
+            if (me.curse > 0) {
+                g.fillStyle = 'rgba(140,50,200,' + (.13 + .06 * Math.sin(gt * 10)) + ')';
+                g.fillRect(0, 0, W, H);
+                txt('CURSED  ' + Math.ceil(me.curse) + 's', W / 2, 22, 8, '#d090ff', 1);
+            }
             for (let i = 0; i < 5; i++) R(me.hp > i ? '#e03040' : '#401820', 4 + i * 8, 4, 6, 5);
             txt('WOOD ' + wood + '  BATTERY ' + scrap, 4, 22, 8, '#ffe0b0');
             R('#222', 4, 26, 62, 5);
@@ -827,12 +1273,24 @@
                 g.fill();
             }
             drawMini();
-            btn('BAG', 280, 3, 36, 15, () => panel = panel == 1 ? 0 : 1);
-            btn('SET', 280, 20, 36, 15, () => panel = panel == 2 ? 0 : 2);
-            btn('MAP', 280, 37, 36, 15, () => panel = panel == 3 ? 0 : 3);
-            if (!panel) {
+            if (!quest) {
+                btn('BAG', 280, 3, 36, 15, () => panel = panel == 1 ? 0 : 1);
+                btn('SET', 280, 20, 36, 15, () => panel = panel == 2 ? 0 : 2);
+                btn('MAP', 280, 37, 36, 15, () => panel = panel == 3 ? 0 : 3);
+            }
+            if (mode == 2 && me.hp <= 0 && !panel) {
+                const vp = viewP();
+                txt('YOU DIED - WATCHING', W / 2, 24, 8, '#ff6060', 1);
+                txt(vp == me ? '' : (vp.name || 'PLAYER ' + (vp.id + 1)), W / 2, 34, 8, '#fff', 1);
+                btn('<', 96, 150, 30, 16, () => specIdx--);
+                btn('>', 194, 150, 30, 16, () => specIdx++);
+                txt('You cannot come back until the game ends', W / 2, 174, 6, '#b0a090', 1);
+            }
+            if (!panel && !(mode == 2 && me.hp <= 0)) {
                 btn('SLASH', 262, 138, 52, 30, () => slash(me));
                 btn('DASH', 262, 104, 52, 26, () => dash(me));
+                R('#222', 262, 98, 52, 4);
+                R(me.dCd > 0 ? '#e0c040' : '#40e060', 262, 98, 52 * (me.dCd > 0 ? Math.max(0, 1 - me.dCd / 2.5) : 1), 4);
                 btn('USE', 204, 146, 50, 24, () => act(me));
                 btn('BUILD', 204, 116, 50, 24, () => build(me));
             }
@@ -867,6 +1325,7 @@
                     txt('Tap the torch to switch it on/off', W / 2, 112, 7, '#b0a080', 1);
                     btn('CLOSE', 130, 122, 60, 16, () => panel = 0);
                 } else if (panel == 3) rMapFull();
+                else if (panel == 4) rQuest();
                 else rSettings(true);
             }
         }
@@ -876,6 +1335,7 @@
             const dot = (x, y, col, n) => { g.fillStyle = col; g.fillRect(px(x) - n / 2 | 0, py(y) - n / 2 | 0, n, n); };
             for (const r of res) if (r.on) r.t ? dot(r.x, r.y, (gt * 3 | 0) % 2 ? '#ffe060' : '#ffb020', z + 1) : dot(r.x, r.y, '#d9954a', z);
             for (const q of shel) dot(q.x, q.y, '#c89a60', z);
+            for (const q of punso) if (!q.done) dot(q.x, q.y, '#c070ff', z);
             dot(CX, CY, '#ff7a1a', z + 1);
             dot(RXp, RYp, '#40c0ff', z + 1);
             for (const m of mobs) if (Math.hypot(m.x - me.x, m.y - me.y) < 170) dot(m.x, m.y, '#ff3030', z);
@@ -902,7 +1362,7 @@
             g.drawImage(mmC, 42, 14, 192, 144);
             mapDots(42, 14, 3, true);
             txt('MAP', 262, 24, 9, '#ffe0b0', 1);
-            [['WOOD', '#d9954a'], ['BATTERY', '#ffd040'], ['CAMP', '#ff7a1a'], ['RADIO', '#40c0ff'], ['SHELTER', '#c89a60'], ['MONSTER', '#ff3030'], ['YOU', '#ffffff']].forEach((o, i) => {
+            [['WOOD', '#d9954a'], ['BATTERY', '#ffd040'], ['CAMP', '#ff7a1a'], ['RADIO', '#40c0ff'], ['SHELTER', '#c89a60'], ['MONSTER', '#ff3030'], ['PUNSO', '#c070ff'], ['YOU', '#ffffff']].forEach((o, i) => {
                 R(o[1], 242, 34 + i * 13, 5, 5);
                 txt(o[0], 251, 40 + i * 13, 6, '#e8dcb0');
             });
@@ -935,7 +1395,8 @@
             }
             row('MONSTERS', () => openBeast(false));
             row('HOW TO PLAY', openInstr);
-            row('CHANGE NAME', openName);
+            if (!acct) row('CHANGE NAME', openName);
+            else if (!inGame) row('PROFILE', () => { panel = 0; openProfile(); });
             if (inGame) row('MAIN MENU', () => { save(); closeNet(); panel = 0; st = 'mode'; });
             txt('MUSIC', 220, 52, 8, '#ffe0b0', 1);
             btn('-', 160, 57, 20, 17, () => setMusicVol(musicVol - .1));
@@ -954,7 +1415,8 @@
             ['CONTROLS (PHONE)', 'MOVE    drag on the left side of screen', 'SLASH   hit monsters near you', 'DASH    quick burst of speed', 'USE     pick up / feed fire / fix radio', 'BUILD   build a shelter in front of you', 'BAG     your items and torch', 'MAP     see where items are', 'SET     music, sound, fullscreen'],
             ['CONTROLS (PC)', 'MOVE    W A S D', 'SLASH   SPACE', 'DASH    SHIFT', 'USE      E', 'BUILD    B', 'TORCH    F', 'MAP      M'],
             ['WHAT TO DO', '1. Walk to a tree. Press USE to get WOOD.', '2. Walk to a battery pile. USE to get', '   BATTERIES.', '3. Stand at the campfire. USE to add wood.', '   The fire slowly dies. Keep it alive!', '4. Stand at the radio. USE to add a', '   battery. You need 8 to call rescue.', '5. BUILD a shelter (costs 6 wood).'],
-            ['SURVIVAL TIPS', 'Monsters fear FIRE. Stay near the fire.', 'Shelters keep monsters away. Monsters', 'damage them, so fix them with wood.', 'Manananggal flies. Kapre is tough.', 'Tikbalang charges. Multo floats through', 'trees. SLASH and DASH to stay alive.', 'Multiplayer: host shares the 4-letter', 'code. Friends enter it under JOIN.']
+            ['SURVIVAL TIPS', 'Monsters fear FIRE. Stay near the fire.', 'Shelters keep monsters away. Monsters', 'damage them, so fix them with wood.', 'Manananggal flies. Kapre is tough.', 'Tikbalang charges. Multo floats through', 'trees. SLASH and DASH to stay alive.', 'Multiplayer: host shares the 4-letter', 'code. Friends enter it under JOIN.'],
+            ['THE DUWENDE', 'Brown mounds with a ? are PUNSO homes.', 'Step on one and a DUWENDE pops out', 'and asks you a HARD question.', '', 'RIGHT: full health + 10 seconds safe.', 'WRONG: CURSE! -2 hearts in 5 seconds.', 'Each punso asks only once per player.', 'Say TABI-TABI PO as you pass!']
         ];
 
         function confirmName() {
@@ -1038,22 +1500,35 @@
             gr.addColorStop(1, 'rgba(160,20,20,0)');
             g.fillStyle = gr;
             g.fillRect(15, 23, 102, 122);
-            g.save();
-            g.translate(66, 138);
-            g.scale(1.5, 1.5);
-            mobSpr({ t: beastPg, ph: gt, left: false }, 0, 0);
-            g.restore();
+            if (b.d) {
+                if (ok(duw)) g.drawImage(duw, 18, 42, 96, 96);
+            } else {
+                g.save();
+                g.translate(66, 138);
+                g.scale(1.5, 1.5);
+                mobSpr({ t: beastPg, ph: gt, left: false }, 0, 0);
+                g.restore();
+            }
             txt(b.n, 126, 36, 12, '#ff7060');
             txt(b.a, 126, 47, 7, '#b0a090');
             b.i.forEach((l, i) => txt(l, 126, 62 + i * 10, 7, '#e8dcb0'));
-            txt('HEALTH', 126, 100, 7, '#ffb060');
-            R('#222', 168, 94, 60, 5);
-            R('#e03040', 168, 94, 60 * MHP[beastPg] / 12, 5);
-            txt('SPEED', 126, 110, 7, '#ffb060');
-            R('#222', 168, 104, 60, 5);
-            R('#40c0ff', 168, 104, 60 * MSP[beastPg] / 44, 5);
-            txt('DAMAGE', 126, 120, 7, '#ffb060');
-            for (let i = 0; i < (beastPg == 1 || beastPg == 2 ? 2 : 1); i++) R('#e03040', 168 + i * 9, 114, 6, 5);
+            if (b.d) {
+                txt('HOME', 126, 100, 7, '#ffb060');
+                txt('Punso mound (brown, with ?)', 160, 100, 7, '#e8dcb0');
+                txt('RIGHT', 126, 110, 7, '#80ff80');
+                txt('Full health + 10 s safe', 160, 110, 7, '#e8dcb0');
+                txt('WRONG', 126, 120, 7, '#ff6060');
+                txt('CURSE: -2 hearts in 5 s', 160, 120, 7, '#e8dcb0');
+            } else {
+                txt('HEALTH', 126, 100, 7, '#ffb060');
+                R('#222', 168, 94, 60, 5);
+                R('#e03040', 168, 94, 60 * MHP[beastPg] / 12, 5);
+                txt('SPEED', 126, 110, 7, '#ffb060');
+                R('#222', 168, 104, 60, 5);
+                R('#40c0ff', 168, 104, 60 * MSP[beastPg] / 44, 5);
+                txt('DAMAGE', 126, 120, 7, '#ffb060');
+                for (let i = 0; i < (beastPg == 1 || beastPg == 2 ? 2 : 1); i++) R('#e03040', 168 + i * 9, 114, 6, 5);
+            }
             txt('TIP: ' + b.tip, 126, 136, 7, '#80d0ff');
             if (beastPg > 0) btn('BACK', 14, 152, 50, 16, () => beastPg--);
             if (beastPre && beastPg < BEAST.length - 1) btn('SKIP', 130, 152, 60, 16, beastGo);
@@ -1079,6 +1554,10 @@
         function startGame0() {
             startMusic();
             if (touchOn && !fullTried) { fullTried = true; goFull(); }
+            if (!acct && !guest) {
+                openForm('login');
+                return;
+            }
             if (!cleanName(playerName)) { nameReturn = 'lore'; st = 'name'; } else st = 'lore';
             stT = 0;
         }
@@ -1228,36 +1707,32 @@
                 btn('CONTINUE', 120, 142, 80, 20, confirmName);
             } else if (st == 'mode') {
                 backdrop();
-                txt('CHOOSE YOUR NIGHT', W / 2, 34, 14, '#e8dcb0', 1);
+                txt('MAIN MENU', W / 2, 26, 14, '#e8dcb0', 1);
+                txt(acct ? acct.name + '  -  Level ' + lvl(acct.xp) : (playerName || 'GUEST') + '  -  guest (progress is not saved)', W / 2, 40, 7, '#c8b890', 1);
                 if (panel == 2) {
                     TX.length = 0;
                     g.fillStyle = 'rgba(0,0,0,.6)';
                     g.fillRect(0, 0, W, H);
                     rSettings(false);
                 } else {
-                    let y = 46;
-                    btn('SOLO', 110, y, 100, 18, () => {
+                    btn('SOLO', 50, 52, 100, 18, () => {
                         mode = 0;
                         st = 'char';
                     });
-                    y += 22;
-                    btn('SOLO + BOTS', 110, y, 100, 18, () => {
+                    btn('SOLO + BOTS', 50, 76, 100, 18, () => {
                         mode = 1;
                         st = 'char';
                     });
-                    y += 22;
-                    btn('MULTIPLAYER', 110, y, 100, 18, () => {
+                    btn('MULTIPLAYER', 50, 100, 100, 18, () => {
                         mode = 2;
                         st = 'char';
                     });
-                    y += 22;
-                    if (hasSave()) {
-                        btn('CONTINUE', 110, y, 100, 18, load);
-                        y += 22;
-                    }
-                    btn('HOW TO PLAY', 110, y, 100, 18, openInstr);
-                    y += 22;
-                    btn('SETTINGS', 110, y, 100, 18, () => panel = 2);
+                    if (hasSave()) btn('CONTINUE', 50, 124, 100, 18, load);
+                    if (acct) btn('PROFILE', 170, 52, 100, 18, openProfile);
+                    else btn('LOGIN', 170, 52, 100, 18, () => openForm('login'));
+                    btn('HOW TO PLAY', 170, 76, 100, 18, openInstr);
+                    btn('SETTINGS', 170, 100, 100, 18, () => panel = 2);
+                    if (acct) btn('LOGOUT', 170, 124, 100, 18, doLogout);
                 }
             } else if (st == 'char') {
                 backdrop();
@@ -1265,7 +1740,7 @@
                 g.fillRect(0, 0, W, H);
                 if (ch !== lastCh) { lastCh = ch; snd(480 + ch * 90, .08, 'triangle', .12, 560 + ch * 90); }
                 chv += (ch - chv) * Math.min(1, 9 * ldt);
-                const sx = 40 + chv * 80;
+                const sx = W / 2;
                 g.fillStyle = 'rgba(255,226,150,' + (.13 + .03 * Math.sin(gt * 9)) + ')';
                 g.beginPath();
                 g.moveTo(sx - 5, 34);
@@ -1280,8 +1755,9 @@
                 g.fillRect(sx - 50, 90, 100, 50);
                 txt('CHOOSE YOUR CAMPER', W / 2, 16, 12, '#e8dcb0', 1);
                 txt('PLAYING AS  ' + shownName(), W / 2, 30, 9, '#ffe080', 1);
-                for (let i = 0; i < 4; i++) {
-                    const cx = 40 + i * 80, lt = Math.max(0, 1 - Math.abs(chv - i));
+                for (let i = 0; i < NAMES.length; i++) {
+                    if (Math.abs(i - chv) > 2.6) continue;
+                    const cx = W / 2 + (i - chv) * 66, lt = Math.max(0, 1 - Math.abs(chv - i));
                     g.save();
                     g.globalAlpha = .22 + .78 * lt;
                     g.translate(cx, 124);
@@ -1289,10 +1765,10 @@
                     person(0, 0, 1.57, gt * 6 | 0, i == ch ? 1 : 0, i);
                     g.restore();
                     txt(NAMES[i], cx, 142, i == ch ? 11 : 8, i == ch ? '#ffe0b0' : '#6a5a50', 1);
-                    hit(cx - 38, 34, 76, 112, () => ch = i);
+                    hit(cx - 30, 34, 60, 112, () => ch = i);
                 }
                 btn('<', 4, 74, 18, 26, () => ch = Math.max(0, ch - 1));
-                btn('>', 298, 74, 18, 26, () => ch = Math.min(3, ch + 1));
+                btn('>', 298, 74, 18, 26, () => ch = Math.min(NAMES.length - 1, ch + 1));
                 btn('CONFIRM', 120, 148, 80, 20, () => {
                     beastGo = () => {
                         if (mode == 2) { netMsg = ''; st = 'mp'; } else { myId = 0; newGame(mode == 1 ? 4 : 1); }
@@ -1315,7 +1791,7 @@
                 txt('HOW MANY PLAYERS?', 85, 60, 7, '#d0c0a0', 1);
                 btn('-', 40, 66, 16, 16, () => nP = Math.max(2, nP - 1));
                 txt('' + nP, 85, 79, 12, '#fff', 1);
-                btn('+', 114, 66, 16, 16, () => nP = Math.min(4, nP + 1));
+                btn('+', 114, 66, 16, 16, () => nP = Math.min(10, nP + 1));
                 btn('HOST', 45, 90, 80, 20, () => connect('HOST ' + nP));
                 txt('JOIN A GAME', 235, 44, 9, '#ffb060', 1);
                 txt('ROOM CODE FROM THE HOST', 235, 60, 7, '#d0c0a0', 1);
@@ -1335,9 +1811,13 @@
                     txt('Share this code. Java and web players can both join.', W / 2, 94, 7, '#b0a080', 1);
                     txt('Players: ' + (joined + 1) + ' / ' + nP, W / 2, 112, 10, '#fff', 1);
                     if (joined > 0) btn('START', 130, 124, 60, 20, () => {
-                        const n = joined + 1;
+                        const n = 1 + Math.max(joined, ...lobbyIds);
                         send('GO ' + n);
                         newGame(n);
+                        for (let i = 1; i < n; i++) if (!lobbyIds.has(i)) {
+                            pl[i].hp = 0;
+                            send('P ' + i + ' ' + fmt(pl[i]));
+                        }
                     });
                 } else txt('Connected! Waiting for host to start...', W / 2, 90, 9, '#fff', 1);
                 wrapTxt(netMsg, W / 2, 140, 7, '#ff6060', 44);
@@ -1346,6 +1826,11 @@
                     st = 'mp';
                 });
             } else if (st == 'game') rGame();
+            else if (st == 'login') rLogin();
+            else if (st == 'register') rRegister();
+            else if (st == 'profile') rProfile();
+            else if (st == 'edit') rEdit();
+            else if (st == 'delete') rDelete();
             else if (st == 'instr') rInstr();
             else if (st == 'beast') rBeast();
             else {
@@ -1357,13 +1842,21 @@
                     txt(endTitle, W / 2, 58, 20, '#ff5050', 1);
                     if (died) txt('GAME OVER', W / 2, 82, 16, '#ff9090', 1);
                 } else txt(endTitle, W / 2, 68, 20, '#70ff90', 1);
-                txt(msg, W / 2, 106, 9, '#e8dcb0', 1);
+                txt(msg, W / 2, 98, 9, '#e8dcb0', 1);
+                if (runInfo) {
+                    txt('SCORE ' + runInfo.score + '    TIME ' + fmtT(runInfo.survived), W / 2, 112, 9, '#ffe080', 1);
+                    if (acct) {
+                        txt('LEVEL ' + runInfo.level + (runInfo.up ? '  - LEVEL UP!' : '') + '    +' + runInfo.score + ' XP', W / 2, 123, 7, '#c8e8c0', 1);
+                        if (runInfo.ach.length) txt('NEW: ' + runInfo.ach.join(', '), W / 2, 132, 7, '#ffd070', 1);
+                        if (!runInfo.saved) txt('Could not save your progress (storage blocked).', W / 2, 132, 7, '#ff6060', 1);
+                    } else txt('Log in to save your score and level.', W / 2, 123, 7, '#a09080', 1);
+                }
                 g.globalAlpha = 1;
                 const menu = () => { closeNet(); st = 'mode'; };
                 if (mode < 2) {
-                    btn('TRY AGAIN', 60, 122, 90, 20, () => { myId = 0; newGame(mode == 1 ? 4 : 1); });
-                    btn('MAIN MENU', 170, 122, 90, 20, menu);
-                } else btn('MAIN MENU', 115, 122, 90, 20, menu);
+                    btn('TRY AGAIN', 60, 142, 90, 20, () => { myId = 0; newGame(mode == 1 ? 4 : 1); });
+                    btn('MAIN MENU', 170, 142, 90, 20, menu);
+                } else btn('MAIN MENU', 115, 142, 90, 20, menu);
             }
         }
 
@@ -1391,6 +1884,69 @@
             }
         }
 
+        // 6 punso (earth mounds where a Duwende lives). Same formula in the Java game, so every device gets the same spots
+        function genPunso() {
+            punso = [];
+            for (let k = 0; k < 6; k++) {
+                for (let s = 0; s < 400; s++) {
+                    const tx = 5 + ((k * 37 + 11 + s * 7) % 54);
+                    const ty = 5 + ((k * 23 + 5 + s * 5) % 38);
+                    if (map[ty][tx]) continue;
+                    if (Math.hypot(tx + .5 - MW / 2, ty + .5 - MH / 2) < 10) continue;
+                    let near = false;
+                    for (const o of punso) if (Math.hypot(o.tx - tx, o.ty - ty) < 12) near = true;
+                    if (near) continue;
+                    punso.push({ tx, ty, x: tx * T + 8, y: ty * T + 12, done: false });
+                    break;
+                }
+            }
+        }
+
+        function startQuest(k) {
+            const d = QUIZ[Math.random() * QUIZ.length | 0];
+            const opts = d[1].map((t, i) => ({ t, ok: i == d[2] }));
+            for (let i = opts.length - 1; i > 0; i--) {
+                const j = Math.random() * (i + 1) | 0;
+                const tmp = opts[i];
+                opts[i] = opts[j];
+                opts[j] = tmp;
+            }
+            punso[k].done = true;
+            quest = { k, q: d[0], opts };
+            panel = 4;
+            me.hurt = Math.max(me.hurt, 6);
+            snd(300, .3, 'triangle', .15, 520);
+        }
+
+        function answerQuest(o) {
+            if (!quest) return;
+            if (o.ok) {
+                runRight++;
+                me.hp = 5;
+                me.hurt = Math.max(me.hurt, 10);
+                say('Salamat po! The Duwende blessed you.');
+                snd(660, .3, 'triangle', .2, 990);
+            } else {
+                me.curse = 5;
+                say('CURSED! The Duwende drains your life.');
+                snd(230, .5, 'sawtooth', .22, 60);
+            }
+            quest = null;
+            panel = 0;
+        }
+
+        function rQuest() {
+            if (!quest) {
+                panel = 0;
+                return;
+            }
+            if (ok(duw)) g.drawImage(duw, 58, 30, 26, 26);
+            txt('DUWENDE', W / 2 + 12, 40, 10, '#ffb060', 1);
+            txt('My PUNSO! Answer, or be cursed!', W / 2 + 12, 50, 7, '#d0c0a0', 1);
+            wrapTxt(quest.q, W / 2, 66, 8, '#ffe0b0', 38);
+            quest.opts.forEach((o, i) => btn(o.t, 62, 84 + i * 18, 196, 16, () => answerQuest(o)));
+        }
+
         function gen() {
             const r = new JR(7);
             map = [];
@@ -1413,6 +1969,7 @@
                 const y = 1 + r.nextInt(MH - 2);
                 if (!map[y][x] && Math.hypot(x - MW / 2, y - MH / 2) > 6) res.push({ x: x * T + 8, y: y * T + 12, t: i % 3 == 0 ? 1 : 0, on: true, rs: 0 });
             }
+            genPunso();
             buildMaps();
         }
 
@@ -1429,8 +1986,8 @@
         const mk = (i, cc) => ({
             id: i,
             ch: cc,
-            x: CX + (i - 1.5) * 14,
-            y: CY + 24,
+            x: CX + ((i % 5) - 2) * 14,
+            y: CY + 24 + (i / 5 | 0) * 14,
             face: 1.57,
             hp: 5,
             an: 0,
@@ -1439,6 +1996,7 @@
             atkCd: 0,
             dT: 0,
             dCd: 0,
+            curse: 0,
             hurt: 0,
             bot: 0,
             name: ''
@@ -1454,6 +2012,7 @@
         }
 
         function build(p) {
+            if (p.hp <= 0 || (quest && p == me)) return;
             const x = p.x + Math.cos(p.face) * 22;
             const y = p.y + Math.sin(p.face) * 22;
             const why = canBuild(x, y);
@@ -1656,11 +2215,27 @@
             spT = 6;
             panel = 0;
             flash = true;
+            specIdx = 0;
+            specSaid = false;
+            runRight = 0;
+            runGather = 0;
+            diedAt = -1;
+            // each bot is a different character (never the same as yours or each other)
+            const pick = [];
+            for (let c = 0; c < NAMES.length; c++) if (c != ch) pick.push(c);
+            for (let i = pick.length - 1; i > 0; i--) {
+                const j = Math.random() * (i + 1) | 0;
+                const tmp = pick[i];
+                pick[i] = pick[j];
+                pick[j] = tmp;
+            }
+            let bi = 0;
             for (let i = 0; i < n; i++) {
                 const isBot = mode == 1 && i > 0;
-                const p = mk(i, isBot ? 2 : (i == myId ? ch : i % 4));
+                const bc = isBot ? pick[bi++ % pick.length] : 0;
+                const p = mk(i, isBot ? bc : (i == myId ? ch : i % NAMES.length));
                 p.bot = isBot;
-                p.name = isBot ? 'PERCIVAL' : '';
+                p.name = isBot ? NAMES[bc] : '';
                 pl.push(p);
             }
             me = pl[myId] || pl[0];
@@ -1692,6 +2267,7 @@
                     x: me.x,
                     y: me.y,
                     hp: me.hp,
+                    bc: pl.filter(q => q.bot).map(q => q.ch),
                     shel
                 }));
                 savedT = 1.5;
@@ -1713,6 +2289,12 @@
                 me.x = s.x;
                 me.y = s.y;
                 me.hp = s.hp;
+                if (s.bc) pl.filter(q => q.bot).forEach((q, k) => {
+                    if (s.bc[k] >= 0 && s.bc[k] < NAMES.length) {
+                        q.ch = s.bc[k];
+                        q.name = NAMES[q.ch];
+                    }
+                });
                 shel = s.shel || [];
             } catch (e) {
                 st = 'mode';
@@ -1727,19 +2309,21 @@
             }
         };
         function end(w) {
+            if (st == 'game') recordRun(w);
+            else runInfo = null;
             win = w;
             st = 'end';
             stT = 0;
             panel = 0;
-            died = !w && !!me && me.hp <= 0;
-            endTitle = w ? (radio >= 100 ? 'RESCUED!' : 'YOU SURVIVED!') : died ? 'OOPS! YOU DIED' : 'GAME OVER';
+            died = !w && mode < 2 && !!me && me.hp <= 0;
+            endTitle = w ? (radio >= 100 ? 'RESCUED!' : (mode == 2 && me && me.hp <= 0 ? 'THEY SURVIVED!' : 'YOU SURVIVED!')) : died ? 'OOPS! YOU DIED' : 'GAME OVER';
             if (died) {
                 try {
                     navigator.vibrate && navigator.vibrate([120, 60, 240]);
                 } catch (e) {}
             }
             if (mode == 2 && hostF) send('E ' + (w ? 1 : 0));
-            msg = !w ? (died ? 'The forest has taken you.' : 'The camp has fallen to the night.') : radio >= 100 ? 'The radio crackles. A rescue team is on the way.' : 'Sunrise breaks. You survived the night.';
+            msg = !w ? (died ? 'The forest has taken you.' : (mode == 2 ? 'Everyone has fallen. The forest wins.' : 'The camp has fallen to the night.')) : radio >= 100 ? 'The radio crackles. A rescue team is on the way.' : 'Sunrise breaks. You survived the night.';
             try {
                 localStorage.removeItem('lastcamp');
             } catch (e) {}
@@ -1753,6 +2337,7 @@
             return x;
         };
         function slash(p) {
+            if (p.hp <= 0 || (quest && p == me)) return;
             if (p.atkCd > 0) return;
             p.atkCd = .4;
             p.atkT = .15;
@@ -1776,6 +2361,7 @@
         }
 
         const dash = p => {
+            if (p.hp <= 0 || (quest && p == me)) return;
             if (p.dCd > 0) return;
             p.dT = .18;
             p.dCd = 2.5;
@@ -1783,6 +2369,7 @@
             snd(300, .15, 'triangle', .1, 600);
         };
         function act(p) {
+            if (p.hp <= 0 || (quest && p == me)) return;
             let r = null;
             let bd = 22;
             for (const q of res) if (q.on) {
@@ -1793,6 +2380,7 @@
                 }
             }
             if (r) {
+                if (p == me) runGather++;
                 if (rem(p)) {
                     send('G ' + res.indexOf(r));
                     sfx(r.t ? 'scrap' : 'chop');
@@ -1856,6 +2444,11 @@
                     iy += dy / dd * m;
                 }
             }
+            if (mode == 2 && me.hp <= 0) {
+                ix = 0;
+                iy = 0;
+                me.dT = 0;
+            }
             const l = Math.hypot(ix, iy);
             if (l > 1) {
                 ix /= l;
@@ -1882,6 +2475,20 @@
                 stepT = .3;
                 sfx('step', .5);
             }
+            if (!quest && !panel && me.hp > 0) {
+                for (let k = 0; k < punso.length; k++) {
+                    const pq = punso[k];
+                    if (!pq.done && Math.hypot(me.x - pq.x, me.y - pq.y) < 9) {
+                        startQuest(k);
+                        break;
+                    }
+                }
+            }
+            if (me.curse > 0 && me.hp > 0) {
+                const cd = Math.min(me.curse, dt);
+                me.curse -= cd;
+                me.hp -= .4 * cd;
+            }
             mobSndT -= dt;
             if (mobSndT <= 0) {
                 mobSndT = 2.5 + Math.random() * 3.5;
@@ -1906,7 +2513,7 @@
             if (au) spT -= dt;
             if (au && spT <= 0) {
                 spT = Math.max(3, 9 - pg * 6);
-                if (mobs.length < 2 + pl.length + (pg * 4 | 0)) spawn();
+                if (mobs.length < 2 + Math.max(1, pl.filter(p => p.hp > 0).length) + (pg * 4 | 0)) spawn();
             }
             if (au) {
                 mobs.forEach(m => mobAI(m, dt));
@@ -1950,7 +2557,19 @@
                     break;
                 }
             }
-            if (me.hp <= 0) end(false);
+            if (mode == 2) {
+                if (me.hp <= 0 && !specSaid) {
+                    specSaid = true;
+                    diedAt = Math.round(300 - tl);
+                    say('You died. Watch your friends until the game ends.');
+                    snd(150, .6, 'square', .2, 80);
+                }
+                if (au) {
+                    if (radio >= 100) end(true);
+                    else if (tl <= 0) end(true);
+                    else if (pl.every(p => p.hp <= 0)) end(false);
+                }
+            } else if (me.hp <= 0) end(false);
             else if (au) {
                 if (radio >= 100) end(true);
                 else if (tl <= 0) end(true);
@@ -2079,6 +2698,7 @@
             try { w && w.close(); } catch (e) {}
             hostF = false;
             joined = 0;
+            lobbyIds.clear();
         }
 
         function wrapTxt(s, x, y, sz, col, n) {
@@ -2162,21 +2782,30 @@
                             return;
                         }
                         const sp = l.indexOf(' '), id = +l.slice(0, sp), rest = l.slice(sp + 1);
-                        if (rest == 'JOINED') joined++;
-                        else if (rest == 'LEFT') joined = Math.max(0, joined - 1);
-                        else handle(id, rest.split(' '));
+                        if (rest == 'JOINED') {
+                            joined++;
+                            lobbyIds.add(id);
+                        } else if (rest == 'LEFT') {
+                            joined = Math.max(0, joined - 1);
+                            lobbyIds.delete(id);
+                            if (st == 'game' && pl && pl[id] && pl[id].hp > 0) {
+                                pl[id].hp = 0;
+                                send('P ' + id + ' ' + fmt(pl[id]));
+                                say((pl[id].name || 'A player') + ' left the game.');
+                            }
+                        } else handle(id, rest.split(' '));
                     } catch (err) {}
                 };
             };
             attempt(0);
         }
 
-        const fEl = [document.getElementById('fa'), document.getElementById('fb')];
-        const fCur = [null, null];
+        const fEl = [document.getElementById('fa'), document.getElementById('fb'), document.getElementById('fc'), document.getElementById('fd')];
+        const fCur = [null, null, null, null];
 
         function syncFields() {
-            const cfg = [fa, fb], k = c.offsetWidth / W;
-            for (let i = 0; i < 2; i++) {
+            const cfg = [fa, fb, fc, fd], k = c.offsetWidth / W;
+            for (let i = 0; i < 4; i++) {
                 const el = fEl[i], f = cfg[i];
                 if (!f) {
                     if (fCur[i]) { el.style.display = 'none'; fCur[i] = null; }
@@ -2192,6 +2821,7 @@
                     sty.height = f.h * k + 'px';
                     sty.fontSize = Math.max(16, f.h * k * .55) + 'px';
                     sty.textTransform = f.id == 'code' ? 'uppercase' : 'none';
+                    el.type = f.pw ? 'password' : 'text';
                     el.placeholder = f.ph;
                     el.maxLength = f.max;
                     el.dataset.id = f.id;
@@ -2208,6 +2838,15 @@
                 if (id == 'name') { playerName = el.value.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 12); el.value = playerName; nameMsg = ''; }
                 else if (id == 'code') { joinCode = el.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4); el.value = joinCode; }
                 else if (id == 'srv') srvVal = el.value.trim();
+                else if (FORMIDS.includes(id)) {
+                    let v = el.value;
+                    if (id == 'lu' || id == 'ru') v = v.replace(/[^A-Za-z0-9_]/g, '').slice(0, 12);
+                    else if (id == 'rn' || id == 'en') v = v.replace(/[^A-Za-z0-9 ]/g, '').slice(0, 12);
+                    else v = v.slice(0, 20);
+                    el.value = v;
+                    F[id] = v;
+                    formMsg = '';
+                }
             });
             el.addEventListener('keydown', e => {
                 e.stopPropagation();
@@ -2215,6 +2854,7 @@
                     el.blur();
                     if (el.dataset.id == 'name') confirmName();
                     else if (el.dataset.id == 'code') joinGame();
+                    else if (FORMIDS.includes(el.dataset.id)) formEnter();
                 }
             });
             el.addEventListener('pointerdown', e => e.stopPropagation());
@@ -2311,9 +2951,8 @@
             if (st == 'char') {
                 const p = pos(e);
                 if (e.pointerType == 'mouse' && !e.buttons) {
-                    if (p.y > 34 && p.y < 146) ch = Math.max(0, Math.min(3, p.x / 80 | 0));
                 } else if (swipeX !== null) {
-                    if (p.x - swipeX > 22) { ch = Math.min(3, ch + 1); swipeX = p.x; }
+                    if (p.x - swipeX > 22) { ch = Math.min(NAMES.length - 1, ch + 1); swipeX = p.x; }
                     else if (swipeX - p.x > 22) { ch = Math.max(0, ch - 1); swipeX = p.x; }
                 }
             }
@@ -2341,7 +2980,7 @@
             }
             if (st == 'char') {
                 if (k == 'arrowleft' || k == 'a') ch = Math.max(0, ch - 1);
-                if (k == 'arrowright' || k == 'd') ch = Math.min(3, ch + 1);
+                if (k == 'arrowright' || k == 'd') ch = Math.min(NAMES.length - 1, ch + 1);
             }
             if (st == 'beast') {
                 if (k == 'enter' || k == ' ' || k == 'arrowright') beastNext();
@@ -2359,9 +2998,9 @@
                 if (k == 'shift' || k == 'k') dash(me);
                 if (k == 'f') flash = !flash;
                 if (k == 'b') build(me);
-                if (k == 'i') panel = panel == 1 ? 0 : 1;
-                if (k == 'm') panel = panel == 3 ? 0 : 3;
-                if (k == 'escape') panel = panel ? 0 : 2;
+                if (k == 'i' && !quest) panel = panel == 1 ? 0 : 1;
+                if (k == 'm' && !quest) panel = panel == 3 ? 0 : 3;
+                if (k == 'escape' && !quest) panel = panel ? 0 : 2;
             }
             if ([' ', 'arrowup', 'arrowdown'].includes(k)) e.preventDefault();
         });
