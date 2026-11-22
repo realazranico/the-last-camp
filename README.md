@@ -6,7 +6,7 @@ A Philippine folklore survival game for phone, PC browser and Java desktop, with
 **Repository:** https://github.com/realazranico/the-last-camp
 
 ## The story
-A group of teenagers goes camping during their school break. They take an unfamiliar road deep into a forest and get lost: no phone signal, the vehicle cannot go on, and night is falling. At an old campsite they learn that something mysterious lives in the forest, that it fears fire, and that an abandoned radio could call for rescue, but it needs eight batteries. Find wood, find all eight batteries, and keep the fire alive. Will they find their way home, or will the forest become their last camp?
+A group of teenagers goes camping during their school break. They take an unfamiliar road deep into a forest and get lost: no phone signal, the vehicle cannot go on, and night is falling. At an old campsite they learn that something mysterious lives in the forest, that it fears fire, and that an abandoned radio could call for rescue, but it needs batteries. Find wood, find all the batteries, and keep the fire alive. Will they find their way home, or will the forest become their last camp?
 
 ## Game features
 - **User accounts:** register, view your profile, edit it, delete it, log in and log out. Accounts are saved and stay after the game is closed and reopened.
