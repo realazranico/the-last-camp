@@ -11,6 +11,8 @@ A group of teenagers goes camping during their school break. They take an unfami
 ## Game features
 - **User accounts:** register, view your profile, edit it, delete it, log in and log out. Accounts are saved and stay after the game is closed and reopened.
 - **Main menu:** Solo, Solo + Bots, Multiplayer, Continue, Profile, How to Play, Settings and Logout.
+- **Your own wood and batteries (multiplayer):** what you pick up belongs to you and is not shared. The campfire, the radio and the shelters are shared, so friends fill them with their own items.
+- **Levels make the radio harder:** the radio needs 8 batteries at level 1, and 2 more for every level you gain, up to 22 batteries at level 8.
 - **Playable game:** survive one night in a forest. Gather wood and batteries, keep the campfire alive, build shelters, fight or avoid 4 monsters, and repair the radio.
 - **10 characters** and **up to 10 players** online. A player who dies becomes a spectator, and the game continues until it is finished.
 - **The Duwende and the punso:** step on a brown mound and a Duwende asks a hard question. A right answer heals you, a wrong answer curses you.
@@ -72,7 +74,7 @@ The host clicks MULTIPLAYER, then HOST (2 to 10 players), and shares the 4-lette
 - **Passwords** are never stored as plain text. Each one is stored as a salted SHA-256 hash.
 - **Browser accounts** are saved in the browser's local storage. **Java accounts** are saved in files in your home folder. They are separate from each other.
 - **Score of a game** = seconds survived (up to 300) + 300 for a win + 2 per radio percent + 50 per right Duwende answer + 5 per item gathered.
-- **Level** = 1 + XP / 600, and XP is the sum of your scores.
+- **Level** = 1 + XP / 600, and XP is the sum of your scores. **Batteries needed for the radio** = 8 + 2 for every level above 1 (maximum 22). In multiplayer the host's level decides.
 - **Achievements:** FIRST NIGHT, SUNRISE, RESCUED, DUWENDE FRIEND, DUWENDE SCHOLAR, GATHERER, TEAM PLAYER, SURVIVOR.
 
 ## Project structure
