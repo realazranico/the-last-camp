@@ -32,7 +32,7 @@ return {
     setRun: (m, t, r, right, gather, hp) => { mode = m; tl = t; radio = r; runRight = right; runGather = gather; me = { hp: hp === undefined ? 5 : hp }; },
     reopen: () => { accts = {}; acct = null; initAccts(); },
     get: () => ({ st, formMsg, formOk, acct, accts, guest, playerName, runInfo }),
-    lvl, ACH
+    lvl, ACH, needFor, levelNeed
 };`;
 
 const g = new Function('crypto', harness)(crypto);
@@ -87,6 +87,13 @@ check('winning by radio in multiplayer unlocks RESCUED, DUWENDE SCHOLAR, GATHERE
 g.setRun(0, 0, 0, 0, 0, 0);
 g.recordRun(false);
 check('a lost game still counts as a game played but not a win', g.get().acct.games === 3 && g.get().acct.wins === 2);
+
+console.log('Level and batteries needed for the radio');
+check('level 1 needs 8 batteries', g.needFor(1) === 8);
+check('each level up adds 2 batteries (levels 2, 3, 4 need 10, 12, 14)', [2, 3, 4].map(g.needFor).join() === '10,12,14');
+check('the need stops growing at level 8 (22 batteries)', g.needFor(8) === 22 && g.needFor(12) === 22);
+check('your account level sets the need (840 XP = level 2 = 10 batteries)', g.levelNeed() === g.needFor(g.lvl(g.get().acct.xp)));
+check('one battery adds 100 / need percent, so the full need always fills the radio', [8, 10, 16, 22].every(n => Math.abs(n * (100 / n) - 100) < 1e-9));
 
 console.log('Update');
 check('invalid new name is rejected', edit('A$', '', 'pass1').formMsg.includes('Name'));

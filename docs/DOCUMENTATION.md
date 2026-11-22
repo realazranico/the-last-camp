@@ -72,9 +72,9 @@ The Last Camp is a survival game based on Philippine folklore. One night in a ha
 | Bag / Map / Settings | I / M / Esc | BAG / MAP / SET |
 
 ### 4.3 Rules
-- Win by surviving until 6:00 AM (the night lasts 5 minutes) or by putting 8 batteries in the radio.
+- Win by surviving until 6:00 AM (the night lasts 5 minutes) or by repairing the radio with batteries. The radio needs 8 batteries at level 1, +2 for every level up (maximum 22 at level 8), so a higher level is harder. In multiplayer the host's level decides.
 - You lose when you run out of hearts. In multiplayer a dead player watches the others; the game only ends when the radio is fixed, sunrise comes, or every player is dead.
-- Trees give wood and battery piles give batteries. Each wood adds 25 to the campfire, which loses 1.2 per second. Monsters fear fire and shelters.
+- Trees give wood and battery piles give batteries. In multiplayer, what you pick up is **yours only**: you spend your own wood on the campfire and on shelters, and your own batteries on the radio. The campfire, radio and shelters are shared by everyone. Each wood adds 25 to the campfire, which loses 1.2 per second. Monsters fear fire and shelters.
 - Each of the 6 punso asks one question per player. A right answer gives full health and 10 seconds of protection. A wrong answer is a curse: 2 hearts lost over 5 seconds.
 
 ### 4.4 Score, level and achievements
@@ -174,6 +174,9 @@ Run `node tests/account-tests.js`. It loads the real account code from `LastCamp
 | TC-16 | TRY AGAIN after game over | A new game starts | [ ] | [ ] |
 | TC-17 | Step on a punso | Duwende question appears; right answer heals, wrong answer curses | [ ] | [ ] |
 | TC-18 | Multiplayer: a player dies | They watch the others; the game goes on | [ ] | [ ] |
+| TC-19 | Multiplayer: two players pick up wood | Each one's wood count goes up only for the player who picked it up | [ ] | [ ] |
+| TC-20 | Multiplayer: a friend puts a battery in the radio | The shared radio bar goes up; your battery count does not change | [ ] | [ ] |
+| TC-21 | Gain a level | Main menu and HUD show the radio needing 2 more batteries | [ ] | [ ] |
 
 The Java version was written to match the browser version but was not compiled or run by the author of this document, so every Java row above must be checked by the team.
 

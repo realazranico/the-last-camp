@@ -174,7 +174,8 @@
             ['Folk belief: what saves you from a Tikbalang trick?', ['Wearing your shirt inside out', 'Whistling loudly', 'Walking backwards'], 0],
             ['What stops a Manananggal from rejoining its body?', ['Salt or ash on its lower half', 'Water on its wings', 'Singing to it'], 0],
             ['In nuno sa punso, what does nuno mean?', ['Elder or ancestor', 'Small thing', 'Night spirit'], 0],
-            ['How much does ONE battery add to the radio?', ['12.5%', '10%', '20%'], 0],
+            ['At level 1, how much does ONE battery add?', ['12.5%', '10%', '20%'], 0],
+            ['How many more batteries does each level up need?', ['2', '1', '4'], 0],
             ['How much does ONE wood add to the fire (max 100)?', ['25', '10', '50'], 0],
             ['How many seconds does the night last?', ['300', '180', '420'], 0],
             ['What is the most shelters you can keep at once?', ['3', '2', '5'], 0],
@@ -218,6 +219,7 @@
         let me;
         let wood;
         let scrap;
+        let needB = 8;
         let radio;
         let fire;
         let tl;
@@ -257,381 +259,384 @@
             } catch (e) {}
         }
 
-        // ===== Player accounts (saved in this browser, so they stay after the game is closed) =====
-        const ACH = [
-            ['FIRST NIGHT', 'Finish a game'],
-            ['SUNRISE', 'Survive to 6:00 AM'],
-            ['RESCUED', 'Repair the radio'],
-            ['DUWENDE FRIEND', '1 right answer'],
-            ['DUWENDE SCHOLAR', '5 right answers'],
-            ['GATHERER', 'Collect 50 items'],
-            ['TEAM PLAYER', 'Finish a MP game'],
-            ['SURVIVOR', 'Reach level 5']
-        ];
-        const FORMIDS = ['lu', 'lp', 'ru', 'rn', 'rp', 'rq', 'en', 'ep', 'ec', 'dp'];
-        let accts = {};
-        let acct = null;
-        let guest = false;
-        let F = {};
-        let formMsg = '';
-        let formOk = false;
-        let runRight = 0;
-        let runGather = 0;
-        let diedAt = -1;
-        let runInfo = null;
-        const K256 = [];
-        for (let n = 2; K256.length < 64; n++) {
-            let pr = true;
-            for (let d = 2; d * d <= n; d++) if (n % d == 0) pr = false;
-            if (pr) K256.push(Math.floor((Math.cbrt(n) % 1) * 4294967296));
-        }
-
-        function sha256(str) {
-            const m = new TextEncoder().encode(str), l = m.length, nb = ((l + 9 + 63) >> 6) << 6;
-            const b = new Uint8Array(nb);
-            b.set(m);
-            b[l] = 0x80;
-            const dv = new DataView(b.buffer);
-            dv.setUint32(nb - 4, (l * 8) >>> 0);
-            dv.setUint32(nb - 8, Math.floor(l * 8 / 4294967296));
-            const H = [2, 3, 5, 7, 11, 13, 17, 19].map(n => Math.floor((Math.sqrt(n) % 1) * 4294967296) | 0);
-            const w = new Int32Array(64);
-            for (let o = 0; o < nb; o += 64) {
-                for (let i = 0; i < 16; i++) w[i] = dv.getInt32(o + i * 4);
-                for (let i = 16; i < 64; i++) {
-                    const x = w[i - 15], y = w[i - 2];
-                    w[i] = (w[i - 16] + ((x >>> 7 | x << 25) ^ (x >>> 18 | x << 14) ^ (x >>> 3)) + w[i - 7] + ((y >>> 17 | y << 15) ^ (y >>> 19 | y << 13) ^ (y >>> 10))) | 0;
-                }
-                let [a, bb, c, d, e, f, g2, h] = H;
-                for (let i = 0; i < 64; i++) {
-                    const t1 = (h + ((e >>> 6 | e << 26) ^ (e >>> 11 | e << 21) ^ (e >>> 25 | e << 7)) + ((e & f) ^ (~e & g2)) + (K256[i] | 0) + w[i]) | 0;
-                    const t2 = (((a >>> 2 | a << 30) ^ (a >>> 13 | a << 19) ^ (a >>> 22 | a << 10)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0;
-                    h = g2;
-                    g2 = f;
-                    f = e;
-                    e = (d + t1) | 0;
-                    d = c;
-                    c = bb;
-                    bb = a;
-                    a = (t1 + t2) | 0;
-                }
-                H[0] = (H[0] + a) | 0; H[1] = (H[1] + bb) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
-                H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g2) | 0; H[7] = (H[7] + h) | 0;
-            }
-            return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
-        }
-
-        const hashPw = (salt, pw) => sha256(salt + ':' + pw);
-        const newSalt = () => {
-            let s = '';
-            for (let i = 0; i < 16; i++) s += (Math.random() * 16 | 0).toString(16);
-            return s;
-        };
-        const accKey = u => String(u).trim().toLowerCase();
-        const validUser = u => /^[A-Za-z0-9_]{3,12}$/.test(u);
-        const validName = n => /^[A-Za-z0-9 ]{1,12}$/.test(n) && n.trim().length > 0;
-        const validPass = p => p.length >= 4 && p.length <= 20;
-        const lvl = xp => 1 + Math.floor(xp / 600);
-        const fmtT = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-
-        function loadAccts() {
-            try {
-                accts = JSON.parse(localStorage.getItem('lcaccts') || '{}') || {};
-            } catch (e) {
-                accts = {};
-            }
-        }
-
-        function saveAccts() {
-            try {
-                localStorage.setItem('lcaccts', JSON.stringify(accts));
-                return true;
-            } catch (e) {
-                return false;
-            }
-        }
-
-        function initAccts() {
-            loadAccts();
-            try {
-                const k = localStorage.getItem('lcsess');
-                if (k && accts[k]) {
-                    acct = accts[k];
-                    playerName = acct.name;
-                }
-            } catch (e) {}
-        }
-
-        function setSession(k) {
-            try {
-                if (k) localStorage.setItem('lcsess', k);
-                else localStorage.removeItem('lcsess');
-            } catch (e) {}
-        }
-
-        function openForm(s) {
-            F = {};
-            formMsg = '';
-            formOk = false;
-            panel = 0;
-            if (s == 'edit' && acct) F.en = acct.name;
-            st = s;
-            stT = 0;
-        }
-
-        function formErr(m) {
-            formMsg = m;
-            formOk = false;
-        }
-
-        // Create
-        function doRegister() {
-            const u = (F.ru || '').trim(), n = (F.rn || '').trim(), p = F.rp || '', q = F.rq || '';
-            if (!u || !n || !p || !q) return formErr('Please fill in every box.');
-            if (!validUser(u)) return formErr('Username: 3-12 letters, numbers or _');
-            if (!validName(n)) return formErr('Name: 1-12 letters or numbers');
-            if (!validPass(p)) return formErr('Password must be 4-20 characters.');
-            if (p != q) return formErr('The two passwords do not match.');
-            const k = accKey(u);
-            if (accts[k]) return formErr('That username is already taken.');
-            const salt = newSalt();
-            accts[k] = { u, name: n, salt, hash: hashPw(salt, p), xp: 0, games: 0, wins: 0, best: 0, bestT: 0, gather: 0, right: 0, mp: 0, ach: 0, made: Date.now() };
-            if (!saveAccts()) {
-                delete accts[k];
-                return formErr('Could not save (storage is blocked or full).');
-            }
-            openForm('login');
-            F.lu = u;
-            formMsg = 'Account created! Please log in.';
-            formOk = true;
-        }
-
-        // Login
-        function doLogin() {
-            const u = (F.lu || '').trim(), p = F.lp || '';
-            if (!u || !p) return formErr('Type your username and password.');
-            const a = accts[accKey(u)];
-            if (!a || a.hash != hashPw(a.salt, p)) return formErr('Wrong username or password.');
-            acct = a;
-            guest = false;
-            playerName = a.name;
-            savePrefs();
-            setSession(accKey(u));
-            F = {};
-            formMsg = '';
-            st = 'lore';
-            stT = 0;
-        }
-
-        function doGuest() {
-            guest = true;
-            nameReturn = 'lore';
-            F = {};
-            formMsg = '';
-            st = 'name';
-            stT = 0;
-        }
-
-        // Logout
-        function doLogout() {
-            acct = null;
-            guest = false;
-            playerName = '';
-            savePrefs();
-            setSession(null);
-            if (mode == 2) closeNet();
-            openForm('login');
-            formMsg = 'You are logged out.';
-            formOk = true;
-        }
-
-        // Read
-        function openProfile() {
-            if (!acct) return openForm('login');
-            panel = 0;
-            st = 'profile';
-            stT = 0;
-        }
-
-        // Update
-        function doEdit() {
-            if (!acct) return;
-            const n = (F.en || '').trim(), np = F.ep || '', cur = F.ec || '';
-            if (!validName(n)) return formErr('Name: 1-12 letters or numbers');
-            if (np && !validPass(np)) return formErr('New password must be 4-20 characters.');
-            if (!cur) return formErr('Type your current password to save.');
-            if (acct.hash != hashPw(acct.salt, cur)) return formErr('Your current password is wrong.');
-            const old = { name: acct.name, salt: acct.salt, hash: acct.hash };
-            acct.name = n;
-            if (np) {
-                acct.salt = newSalt();
-                acct.hash = hashPw(acct.salt, np);
-            }
-            if (!saveAccts()) {
-                Object.assign(acct, old);
-                return formErr('Could not save (storage is blocked or full).');
-            }
-            playerName = n;
-            savePrefs();
-            if (me) me.name = n;
-            st = 'profile';
-            stT = 0;
-        }
-
-        // Delete
-        function doDelete() {
-            if (!acct) return;
-            const p = F.dp || '';
-            if (!p) return formErr('Type your password to confirm.');
-            if (acct.hash != hashPw(acct.salt, p)) return formErr('Wrong password. Nothing was deleted.');
-            delete accts[accKey(acct.u)];
-            saveAccts();
-            acct = null;
-            guest = false;
-            playerName = '';
-            savePrefs();
-            setSession(null);
-            openForm('login');
-            formMsg = 'Your account was deleted.';
-            formOk = true;
-        }
-
-        function formEnter() {
-            if (st == 'login') doLogin();
-            else if (st == 'register') doRegister();
-            else if (st == 'edit') doEdit();
-            else if (st == 'delete') doDelete();
-        }
-
-        function field(slot, id, y, ph, max, pw) {
-            const f = { id, x: 70, y, w: 180, h: 20, max, ph, pw: !!pw, get: () => F[id] || '', focus: slot == 0 };
-            if (slot == 0) fa = f;
-            else if (slot == 1) fb = f;
-            else if (slot == 2) fc = f;
-            else fd = f;
-        }
-
-        // Score, level and achievements
-        function recordRun(w) {
-            const survived = (mode == 2 && me && me.hp <= 0 && diedAt >= 0) ? diedAt : Math.max(0, Math.min(300, Math.round(300 - tl)));
-            const score = survived + (w ? 300 : 0) + Math.round(Math.max(0, Math.min(100, radio))) * 2 + runRight * 50 + runGather * 5;
-            runInfo = { score, survived, level: 0, up: false, ach: [], saved: true };
-            if (!acct) return;
-            const a = acct, oldLv = lvl(a.xp);
-            a.games++;
-            if (w) a.wins++;
-            a.xp += score;
-            a.best = Math.max(a.best, score);
-            a.bestT = Math.max(a.bestT, survived);
-            a.gather += runGather;
-            a.right += runRight;
-            if (mode == 2) a.mp = (a.mp || 0) + 1;
-            const got = [];
-            const chk = (i, ok) => {
-                if (ok && !(a.ach & (1 << i))) {
-                    a.ach |= 1 << i;
-                    got.push(ACH[i][0]);
-                }
-            };
-            chk(0, a.games >= 1);
-            chk(1, w && radio < 100);
-            chk(2, w && radio >= 100);
-            chk(3, a.right >= 1);
-            chk(4, a.right >= 5);
-            chk(5, a.gather >= 50);
-            chk(6, (a.mp || 0) >= 1);
-            chk(7, lvl(a.xp) >= 5);
-            runInfo.level = lvl(a.xp);
-            runInfo.up = lvl(a.xp) > oldLv;
-            runInfo.ach = got;
-            runInfo.saved = saveAccts();
-        }
-
-        function rLogin() {
-            backdrop();
-            txt('LOGIN', W / 2, 30, 14, '#e8dcb0', 1);
-            field(0, 'lu', 40, 'Username', 12, false);
-            field(1, 'lp', 66, 'Password', 20, true);
-            if (formMsg) txt(formMsg, W / 2, 100, 8, formOk ? '#80ff80' : '#ff6060', 1);
-            btn('LOGIN', 60, 110, 90, 18, doLogin);
-            btn('REGISTER', 170, 110, 90, 18, () => openForm('register'));
-            btn('PLAY AS GUEST', 110, 134, 100, 16, doGuest);
-            txt('Accounts are saved on this device. Guests do not save progress.', W / 2, 166, 6, '#a09080', 1);
-            btn('BACK', 4, 158, 40, 14, () => { st = 'title'; });
-        }
-
-        function rRegister() {
-            backdrop();
-            txt('CREATE ACCOUNT', W / 2, 22, 12, '#e8dcb0', 1);
-            field(0, 'ru', 32, 'Username (3-12)', 12, false);
-            field(1, 'rn', 56, 'Display name (1-12)', 12, false);
-            field(2, 'rp', 80, 'Password (4-20)', 20, true);
-            field(3, 'rq', 104, 'Repeat password', 20, true);
-            if (formMsg) txt(formMsg, W / 2, 136, 8, '#ff6060', 1);
-            btn('CREATE', 60, 146, 90, 18, doRegister);
-            btn('BACK', 170, 146, 90, 18, () => openForm('login'));
-        }
-
-        function rProfile() {
-            if (!acct) {
-                openForm('login');
-                return;
-            }
-            backdrop();
-            g.fillStyle = 'rgba(0,0,10,.55)';
-            g.fillRect(0, 0, W, H);
-            txt('PROFILE', W / 2, 16, 12, '#e8dcb0', 1);
-            const a = acct, lv = lvl(a.xp), into = a.xp % 600;
-            const row = (lab, val, y) => {
-                txt(lab, 14, y, 7, '#ffb060');
-                txt(String(val), 84, y, 7, '#e8dcb0');
-            };
-            row('USERNAME', a.u, 32);
-            row('NAME', a.name, 44);
-            row('LEVEL', 'Lv ' + lv, 56);
-            R('#222', 14, 60, 130, 5);
-            R('#70d070', 14, 60, 130 * into / 600, 5);
-            txt('XP ' + into + ' / 600', 14, 74, 6, '#a0b090');
-            row('GAMES', a.games, 86);
-            row('WINS', a.wins, 98);
-            row('BEST SCORE', a.best, 110);
-            row('LONGEST NIGHT', fmtT(a.bestT), 122);
-            row('ITEMS FOUND', a.gather, 134);
-            txt('ACHIEVEMENTS', 160, 32, 8, '#ffb060');
-            ACH.forEach((x, i) => {
-                const on = !!(a.ach & (1 << i));
-                txt((on ? '[X] ' : '[ ] ') + x[0] + ' - ' + x[1], 160, 44 + i * 12, 6, on ? '#ffe080' : '#807060');
-            });
-            btn('EDIT', 14, 148, 70, 16, () => openForm('edit'));
-            btn('LOGOUT', 90, 148, 70, 16, doLogout);
-            btn('DELETE', 166, 148, 70, 16, () => openForm('delete'));
-            btn('BACK', 246, 148, 60, 16, () => { st = 'mode'; });
-        }
-
-        function rEdit() {
-            if (!acct) return openForm('login');
-            backdrop();
-            txt('EDIT PROFILE', W / 2, 26, 12, '#e8dcb0', 1);
-            field(0, 'en', 40, 'Display name', 12, false);
-            field(1, 'ep', 66, 'New password (optional)', 20, true);
-            field(2, 'ec', 92, 'Current password (required)', 20, true);
-            if (formMsg) txt(formMsg, W / 2, 124, 8, '#ff6060', 1);
-            btn('SAVE', 60, 136, 90, 18, doEdit);
-            btn('CANCEL', 170, 136, 90, 18, () => { st = 'profile'; });
-        }
-
-        function rDelete() {
-            if (!acct) return openForm('login');
-            backdrop();
-            txt('DELETE ACCOUNT', W / 2, 26, 12, '#ff6060', 1);
-            txt('This removes ' + acct.u + ' and all its progress.', W / 2, 46, 7, '#e8dcb0', 1);
-            txt('It cannot be undone.', W / 2, 56, 7, '#e8dcb0', 1);
-            field(0, 'dp', 68, 'Type your password', 20, true);
-            if (formMsg) txt(formMsg, W / 2, 100, 8, '#ff6060', 1);
-            btn('DELETE FOREVER', 50, 112, 110, 18, doDelete);
-            btn('CANCEL', 176, 112, 90, 18, () => { st = 'profile'; });
-        }
-
+        // ===== Player accounts (saved in this browser, so they stay after the game is closed) =====
+        const ACH = [
+            ['FIRST NIGHT', 'Finish a game'],
+            ['SUNRISE', 'Survive to 6:00 AM'],
+            ['RESCUED', 'Repair the radio'],
+            ['DUWENDE FRIEND', '1 right answer'],
+            ['DUWENDE SCHOLAR', '5 right answers'],
+            ['GATHERER', 'Collect 50 items'],
+            ['TEAM PLAYER', 'Finish a MP game'],
+            ['SURVIVOR', 'Reach level 5']
+        ];
+        const FORMIDS = ['lu', 'lp', 'ru', 'rn', 'rp', 'rq', 'en', 'ep', 'ec', 'dp'];
+        let accts = {};
+        let acct = null;
+        let guest = false;
+        let F = {};
+        let formMsg = '';
+        let formOk = false;
+        let runRight = 0;
+        let runGather = 0;
+        let diedAt = -1;
+        let runInfo = null;
+        const K256 = [];
+        for (let n = 2; K256.length < 64; n++) {
+            let pr = true;
+            for (let d = 2; d * d <= n; d++) if (n % d == 0) pr = false;
+            if (pr) K256.push(Math.floor((Math.cbrt(n) % 1) * 4294967296));
+        }
+
+        function sha256(str) {
+            const m = new TextEncoder().encode(str), l = m.length, nb = ((l + 9 + 63) >> 6) << 6;
+            const b = new Uint8Array(nb);
+            b.set(m);
+            b[l] = 0x80;
+            const dv = new DataView(b.buffer);
+            dv.setUint32(nb - 4, (l * 8) >>> 0);
+            dv.setUint32(nb - 8, Math.floor(l * 8 / 4294967296));
+            const H = [2, 3, 5, 7, 11, 13, 17, 19].map(n => Math.floor((Math.sqrt(n) % 1) * 4294967296) | 0);
+            const w = new Int32Array(64);
+            for (let o = 0; o < nb; o += 64) {
+                for (let i = 0; i < 16; i++) w[i] = dv.getInt32(o + i * 4);
+                for (let i = 16; i < 64; i++) {
+                    const x = w[i - 15], y = w[i - 2];
+                    w[i] = (w[i - 16] + ((x >>> 7 | x << 25) ^ (x >>> 18 | x << 14) ^ (x >>> 3)) + w[i - 7] + ((y >>> 17 | y << 15) ^ (y >>> 19 | y << 13) ^ (y >>> 10))) | 0;
+                }
+                let [a, bb, c, d, e, f, g2, h] = H;
+                for (let i = 0; i < 64; i++) {
+                    const t1 = (h + ((e >>> 6 | e << 26) ^ (e >>> 11 | e << 21) ^ (e >>> 25 | e << 7)) + ((e & f) ^ (~e & g2)) + (K256[i] | 0) + w[i]) | 0;
+                    const t2 = (((a >>> 2 | a << 30) ^ (a >>> 13 | a << 19) ^ (a >>> 22 | a << 10)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0;
+                    h = g2;
+                    g2 = f;
+                    f = e;
+                    e = (d + t1) | 0;
+                    d = c;
+                    c = bb;
+                    bb = a;
+                    a = (t1 + t2) | 0;
+                }
+                H[0] = (H[0] + a) | 0; H[1] = (H[1] + bb) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+                H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g2) | 0; H[7] = (H[7] + h) | 0;
+            }
+            return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+        }
+
+        const hashPw = (salt, pw) => sha256(salt + ':' + pw);
+        const newSalt = () => {
+            let s = '';
+            for (let i = 0; i < 16; i++) s += (Math.random() * 16 | 0).toString(16);
+            return s;
+        };
+        const accKey = u => String(u).trim().toLowerCase();
+        const validUser = u => /^[A-Za-z0-9_]{3,12}$/.test(u);
+        const validName = n => /^[A-Za-z0-9 ]{1,12}$/.test(n) && n.trim().length > 0;
+        const validPass = p => p.length >= 4 && p.length <= 20;
+        const lvl = xp => 1 + Math.floor(xp / 600);
+        // batteries needed to repair the radio: 8 at level 1, +2 for every level up (stops growing at level 8)
+        const needFor = l => 8 + 2 * (Math.min(8, l) - 1);
+        const levelNeed = () => needFor(acct ? lvl(acct.xp) : 1);
+        const fmtT = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+        function loadAccts() {
+            try {
+                accts = JSON.parse(localStorage.getItem('lcaccts') || '{}') || {};
+            } catch (e) {
+                accts = {};
+            }
+        }
+
+        function saveAccts() {
+            try {
+                localStorage.setItem('lcaccts', JSON.stringify(accts));
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function initAccts() {
+            loadAccts();
+            try {
+                const k = localStorage.getItem('lcsess');
+                if (k && accts[k]) {
+                    acct = accts[k];
+                    playerName = acct.name;
+                }
+            } catch (e) {}
+        }
+
+        function setSession(k) {
+            try {
+                if (k) localStorage.setItem('lcsess', k);
+                else localStorage.removeItem('lcsess');
+            } catch (e) {}
+        }
+
+        function openForm(s) {
+            F = {};
+            formMsg = '';
+            formOk = false;
+            panel = 0;
+            if (s == 'edit' && acct) F.en = acct.name;
+            st = s;
+            stT = 0;
+        }
+
+        function formErr(m) {
+            formMsg = m;
+            formOk = false;
+        }
+
+        // Create
+        function doRegister() {
+            const u = (F.ru || '').trim(), n = (F.rn || '').trim(), p = F.rp || '', q = F.rq || '';
+            if (!u || !n || !p || !q) return formErr('Please fill in every box.');
+            if (!validUser(u)) return formErr('Username: 3-12 letters, numbers or _');
+            if (!validName(n)) return formErr('Name: 1-12 letters or numbers');
+            if (!validPass(p)) return formErr('Password must be 4-20 characters.');
+            if (p != q) return formErr('The two passwords do not match.');
+            const k = accKey(u);
+            if (accts[k]) return formErr('That username is already taken.');
+            const salt = newSalt();
+            accts[k] = { u, name: n, salt, hash: hashPw(salt, p), xp: 0, games: 0, wins: 0, best: 0, bestT: 0, gather: 0, right: 0, mp: 0, ach: 0, made: Date.now() };
+            if (!saveAccts()) {
+                delete accts[k];
+                return formErr('Could not save (storage is blocked or full).');
+            }
+            openForm('login');
+            F.lu = u;
+            formMsg = 'Account created! Please log in.';
+            formOk = true;
+        }
+
+        // Login
+        function doLogin() {
+            const u = (F.lu || '').trim(), p = F.lp || '';
+            if (!u || !p) return formErr('Type your username and password.');
+            const a = accts[accKey(u)];
+            if (!a || a.hash != hashPw(a.salt, p)) return formErr('Wrong username or password.');
+            acct = a;
+            guest = false;
+            playerName = a.name;
+            savePrefs();
+            setSession(accKey(u));
+            F = {};
+            formMsg = '';
+            st = 'lore';
+            stT = 0;
+        }
+
+        function doGuest() {
+            guest = true;
+            nameReturn = 'lore';
+            F = {};
+            formMsg = '';
+            st = 'name';
+            stT = 0;
+        }
+
+        // Logout
+        function doLogout() {
+            acct = null;
+            guest = false;
+            playerName = '';
+            savePrefs();
+            setSession(null);
+            if (mode == 2) closeNet();
+            openForm('login');
+            formMsg = 'You are logged out.';
+            formOk = true;
+        }
+
+        // Read
+        function openProfile() {
+            if (!acct) return openForm('login');
+            panel = 0;
+            st = 'profile';
+            stT = 0;
+        }
+
+        // Update
+        function doEdit() {
+            if (!acct) return;
+            const n = (F.en || '').trim(), np = F.ep || '', cur = F.ec || '';
+            if (!validName(n)) return formErr('Name: 1-12 letters or numbers');
+            if (np && !validPass(np)) return formErr('New password must be 4-20 characters.');
+            if (!cur) return formErr('Type your current password to save.');
+            if (acct.hash != hashPw(acct.salt, cur)) return formErr('Your current password is wrong.');
+            const old = { name: acct.name, salt: acct.salt, hash: acct.hash };
+            acct.name = n;
+            if (np) {
+                acct.salt = newSalt();
+                acct.hash = hashPw(acct.salt, np);
+            }
+            if (!saveAccts()) {
+                Object.assign(acct, old);
+                return formErr('Could not save (storage is blocked or full).');
+            }
+            playerName = n;
+            savePrefs();
+            if (me) me.name = n;
+            st = 'profile';
+            stT = 0;
+        }
+
+        // Delete
+        function doDelete() {
+            if (!acct) return;
+            const p = F.dp || '';
+            if (!p) return formErr('Type your password to confirm.');
+            if (acct.hash != hashPw(acct.salt, p)) return formErr('Wrong password. Nothing was deleted.');
+            delete accts[accKey(acct.u)];
+            saveAccts();
+            acct = null;
+            guest = false;
+            playerName = '';
+            savePrefs();
+            setSession(null);
+            openForm('login');
+            formMsg = 'Your account was deleted.';
+            formOk = true;
+        }
+
+        function formEnter() {
+            if (st == 'login') doLogin();
+            else if (st == 'register') doRegister();
+            else if (st == 'edit') doEdit();
+            else if (st == 'delete') doDelete();
+        }
+
+        function field(slot, id, y, ph, max, pw) {
+            const f = { id, x: 70, y, w: 180, h: 20, max, ph, pw: !!pw, get: () => F[id] || '', focus: slot == 0 };
+            if (slot == 0) fa = f;
+            else if (slot == 1) fb = f;
+            else if (slot == 2) fc = f;
+            else fd = f;
+        }
+
+        // Score, level and achievements
+        function recordRun(w) {
+            const survived = (mode == 2 && me && me.hp <= 0 && diedAt >= 0) ? diedAt : Math.max(0, Math.min(300, Math.round(300 - tl)));
+            const score = survived + (w ? 300 : 0) + Math.round(Math.max(0, Math.min(100, radio))) * 2 + runRight * 50 + runGather * 5;
+            runInfo = { score, survived, level: 0, up: false, ach: [], saved: true };
+            if (!acct) return;
+            const a = acct, oldLv = lvl(a.xp);
+            a.games++;
+            if (w) a.wins++;
+            a.xp += score;
+            a.best = Math.max(a.best, score);
+            a.bestT = Math.max(a.bestT, survived);
+            a.gather += runGather;
+            a.right += runRight;
+            if (mode == 2) a.mp = (a.mp || 0) + 1;
+            const got = [];
+            const chk = (i, ok) => {
+                if (ok && !(a.ach & (1 << i))) {
+                    a.ach |= 1 << i;
+                    got.push(ACH[i][0]);
+                }
+            };
+            chk(0, a.games >= 1);
+            chk(1, w && radio < 100);
+            chk(2, w && radio >= 100);
+            chk(3, a.right >= 1);
+            chk(4, a.right >= 5);
+            chk(5, a.gather >= 50);
+            chk(6, (a.mp || 0) >= 1);
+            chk(7, lvl(a.xp) >= 5);
+            runInfo.level = lvl(a.xp);
+            runInfo.up = lvl(a.xp) > oldLv;
+            runInfo.ach = got;
+            runInfo.saved = saveAccts();
+        }
+
+        function rLogin() {
+            backdrop();
+            txt('LOGIN', W / 2, 30, 14, '#e8dcb0', 1);
+            field(0, 'lu', 40, 'Username', 12, false);
+            field(1, 'lp', 66, 'Password', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 100, 8, formOk ? '#80ff80' : '#ff6060', 1);
+            btn('LOGIN', 60, 110, 90, 18, doLogin);
+            btn('REGISTER', 170, 110, 90, 18, () => openForm('register'));
+            btn('PLAY AS GUEST', 110, 134, 100, 16, doGuest);
+            txt('Accounts are saved on this device. Guests do not save progress.', W / 2, 166, 6, '#a09080', 1);
+            btn('BACK', 4, 158, 40, 14, () => { st = 'title'; });
+        }
+
+        function rRegister() {
+            backdrop();
+            txt('CREATE ACCOUNT', W / 2, 22, 12, '#e8dcb0', 1);
+            field(0, 'ru', 32, 'Username (3-12)', 12, false);
+            field(1, 'rn', 56, 'Display name (1-12)', 12, false);
+            field(2, 'rp', 80, 'Password (4-20)', 20, true);
+            field(3, 'rq', 104, 'Repeat password', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 136, 8, '#ff6060', 1);
+            btn('CREATE', 60, 146, 90, 18, doRegister);
+            btn('BACK', 170, 146, 90, 18, () => openForm('login'));
+        }
+
+        function rProfile() {
+            if (!acct) {
+                openForm('login');
+                return;
+            }
+            backdrop();
+            g.fillStyle = 'rgba(0,0,10,.55)';
+            g.fillRect(0, 0, W, H);
+            txt('PROFILE', W / 2, 16, 12, '#e8dcb0', 1);
+            const a = acct, lv = lvl(a.xp), into = a.xp % 600;
+            const row = (lab, val, y) => {
+                txt(lab, 14, y, 7, '#ffb060');
+                txt(String(val), 84, y, 7, '#e8dcb0');
+            };
+            row('USERNAME', a.u, 32);
+            row('NAME', a.name, 44);
+            row('LEVEL', 'Lv ' + lv, 56);
+            R('#222', 14, 60, 130, 5);
+            R('#70d070', 14, 60, 130 * into / 600, 5);
+            txt('XP ' + into + ' / 600', 14, 74, 6, '#a0b090');
+            row('GAMES', a.games, 86);
+            row('WINS', a.wins, 98);
+            row('BEST SCORE', a.best, 110);
+            row('LONGEST NIGHT', fmtT(a.bestT), 122);
+            row('ITEMS FOUND', a.gather, 134);
+            txt('ACHIEVEMENTS', 160, 32, 8, '#ffb060');
+            ACH.forEach((x, i) => {
+                const on = !!(a.ach & (1 << i));
+                txt((on ? '[X] ' : '[ ] ') + x[0] + ' - ' + x[1], 160, 44 + i * 12, 6, on ? '#ffe080' : '#807060');
+            });
+            btn('EDIT', 14, 148, 70, 16, () => openForm('edit'));
+            btn('LOGOUT', 90, 148, 70, 16, doLogout);
+            btn('DELETE', 166, 148, 70, 16, () => openForm('delete'));
+            btn('BACK', 246, 148, 60, 16, () => { st = 'mode'; });
+        }
+
+        function rEdit() {
+            if (!acct) return openForm('login');
+            backdrop();
+            txt('EDIT PROFILE', W / 2, 26, 12, '#e8dcb0', 1);
+            field(0, 'en', 40, 'Display name', 12, false);
+            field(1, 'ep', 66, 'New password (optional)', 20, true);
+            field(2, 'ec', 92, 'Current password (required)', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 124, 8, '#ff6060', 1);
+            btn('SAVE', 60, 136, 90, 18, doEdit);
+            btn('CANCEL', 170, 136, 90, 18, () => { st = 'profile'; });
+        }
+
+        function rDelete() {
+            if (!acct) return openForm('login');
+            backdrop();
+            txt('DELETE ACCOUNT', W / 2, 26, 12, '#ff6060', 1);
+            txt('This removes ' + acct.u + ' and all its progress.', W / 2, 46, 7, '#e8dcb0', 1);
+            txt('It cannot be undone.', W / 2, 56, 7, '#e8dcb0', 1);
+            field(0, 'dp', 68, 'Type your password', 20, true);
+            if (formMsg) txt(formMsg, W / 2, 100, 8, '#ff6060', 1);
+            btn('DELETE FOREVER', 50, 112, 110, 18, doDelete);
+            btn('CANCEL', 176, 112, 90, 18, () => { st = 'profile'; });
+        }
+
         loadPrefs();
         initAccts();
         try { srvVal = localStorage.getItem('lcserver2') || ''; } catch (e) {}
@@ -1238,7 +1243,7 @@
             txt('WOOD ' + wood + '  BATTERY ' + scrap, 4, 22, 8, '#ffe0b0');
             R('#222', 4, 26, 62, 5);
             R('#40c0ff', 4, 26, 62 * radio / 100, 5);
-            txt('RADIO', 68, 32, 7, '#80d0ff');
+            txt('RADIO ' + Math.round(radio * needB / 100) + '/' + needB, 68, 32, 7, '#80d0ff');
             R('#222', 4, 34, 62, 5);
             R('#ff9030', 4, 34, 62 * fire / 100, 5);
             txt('FIRE', 68, 40, 7, '#ffb060');
@@ -1411,10 +1416,10 @@
         }
 
         const INSTR = [
-            ['THE GOAL', 'You are lost in a forest at night.', '', 'WIN  Survive until sunrise (6:00 AM)', '     OR repair the radio with 8 batteries', '     to call for rescue.', 'LOSE If the monsters get you.', '', 'The night lasts about 5 minutes.'],
+            ['THE GOAL', 'You are lost in a forest at night.', '', 'WIN  Survive until sunrise (6:00 AM)', '     OR repair the radio with batteries:', '     8 at level 1, +2 per level up.', 'LOSE If the monsters get you.', '', 'The night lasts about 5 minutes.'],
             ['CONTROLS (PHONE)', 'MOVE    drag on the left side of screen', 'SLASH   hit monsters near you', 'DASH    quick burst of speed', 'USE     pick up / feed fire / fix radio', 'BUILD   build a shelter in front of you', 'BAG     your items and torch', 'MAP     see where items are', 'SET     music, sound, fullscreen'],
             ['CONTROLS (PC)', 'MOVE    W A S D', 'SLASH   SPACE', 'DASH    SHIFT', 'USE      E', 'BUILD    B', 'TORCH    F', 'MAP      M'],
-            ['WHAT TO DO', '1. Walk to a tree. Press USE to get WOOD.', '2. Walk to a battery pile. USE to get', '   BATTERIES.', '3. Stand at the campfire. USE to add wood.', '   The fire slowly dies. Keep it alive!', '4. Stand at the radio. USE to add a', '   battery. You need 8 to call rescue.', '5. BUILD a shelter (costs 6 wood).'],
+            ['WHAT TO DO', '1. Walk to a tree. Press USE to get WOOD.', '2. Walk to a battery pile. USE to get', '   BATTERIES (yours, not shared online).', '3. Stand at the campfire. USE to add wood.', '   The fire slowly dies. Keep it alive!', '4. Stand at the radio. USE to add a', '   battery. Level 1 needs 8, +2/level.', '5. BUILD a shelter (costs 6 wood).'],
             ['SURVIVAL TIPS', 'Monsters fear FIRE. Stay near the fire.', 'Shelters keep monsters away. Monsters', 'damage them, so fix them with wood.', 'Manananggal flies. Kapre is tough.', 'Tikbalang charges. Multo floats through', 'trees. SLASH and DASH to stay alive.', 'Multiplayer: host shares the 4-letter', 'code. Friends enter it under JOIN.'],
             ['THE DUWENDE', 'Brown mounds with a ? are PUNSO homes.', 'Step on one and a DUWENDE pops out', 'and asks you a HARD question.', '', 'RIGHT: full health + 10 seconds safe.', 'WRONG: CURSE! -2 hearts in 5 seconds.', 'Each punso asks only once per player.', 'Say TABI-TABI PO as you pass!']
         ];
@@ -1708,7 +1713,7 @@
             } else if (st == 'mode') {
                 backdrop();
                 txt('MAIN MENU', W / 2, 26, 14, '#e8dcb0', 1);
-                txt(acct ? acct.name + '  -  Level ' + lvl(acct.xp) : (playerName || 'GUEST') + '  -  guest (progress is not saved)', W / 2, 40, 7, '#c8b890', 1);
+                txt(acct ? acct.name + '  -  Level ' + lvl(acct.xp) + '  -  radio needs ' + levelNeed() + ' batteries' : (playerName || 'GUEST') + '  -  guest  -  radio needs 8 batteries', W / 2, 40, 7, '#c8b890', 1);
                 if (panel == 2) {
                     TX.length = 0;
                     g.fillStyle = 'rgba(0,0,0,.6)';
@@ -1812,7 +1817,7 @@
                     txt('Players: ' + (joined + 1) + ' / ' + nP, W / 2, 112, 10, '#fff', 1);
                     if (joined > 0) btn('START', 130, 124, 60, 20, () => {
                         const n = 1 + Math.max(joined, ...lobbyIds);
-                        send('GO ' + n);
+                        send('GO ' + n + ' ' + levelNeed());
                         newGame(n);
                         for (let i = 1; i < n; i++) if (!lobbyIds.has(i)) {
                             pl[i].hp = 0;
@@ -1846,7 +1851,7 @@
                 if (runInfo) {
                     txt('SCORE ' + runInfo.score + '    TIME ' + fmtT(runInfo.survived), W / 2, 112, 9, '#ffe080', 1);
                     if (acct) {
-                        txt('LEVEL ' + runInfo.level + (runInfo.up ? '  - LEVEL UP!' : '') + '    +' + runInfo.score + ' XP', W / 2, 123, 7, '#c8e8c0', 1);
+                        txt('LEVEL ' + runInfo.level + (runInfo.up ? ' UP! Radio now needs ' + needFor(runInfo.level) + ' batteries' : '') + '    +' + runInfo.score + ' XP', W / 2, 123, 7, '#c8e8c0', 1);
                         if (runInfo.ach.length) txt('NEW: ' + runInfo.ach.join(', '), W / 2, 132, 7, '#ffd070', 1);
                         if (!runInfo.saved) txt('Could not save your progress (storage blocked).', W / 2, 132, 7, '#ff6060', 1);
                     } else txt('Log in to save your score and level.', W / 2, 123, 7, '#a09080', 1);
@@ -2003,8 +2008,8 @@
         });
         const frad = () => fire > 0 ? 14 + fire * .35 : 0;
         const nearShel = (x, y, r) => shel.find(q => Math.hypot(q.x - x, q.y - y) < r);
-        function canBuild(x, y) {
-            if (wood < SHEL_COST) return 'Need ' + SHEL_COST + ' wood to build a shelter';
+        function canBuild(x, y, free) {
+            if (!free && wood < SHEL_COST) return 'Need ' + SHEL_COST + ' wood to build a shelter';
             if (shel.length >= 3) return 'You can only keep 3 shelters';
             if (solid(x, y) || solid(x - 10, y) || solid(x + 10, y)) return 'No room to build here';
             if (nearShel(x, y, 34) || Math.hypot(x - CX, y - CY) < 36 || Math.hypot(x - RXp, y - RYp) < 24) return 'Too close to something';
@@ -2021,6 +2026,7 @@
                 return;
             }
             if (rem(p)) {
+                wood -= SHEL_COST;
                 send('B ' + (x | 0) + ' ' + (y | 0));
                 sfx('build');
                 return;
@@ -2028,20 +2034,22 @@
             applyBuild(x, y);
         }
 
-        function applyBuild(x, y) {
-            if (canBuild(x, y)) return;
-            wood -= SHEL_COST;
+        function applyBuild(x, y, free) {
+            if (canBuild(x, y, free)) return false;
+            if (!free) wood -= SHEL_COST;
             shel.push({ x, y, dur: SHEL_MAX });
             sfx('build');
             say('Shelter built! Monsters keep away.');
+            return true;
         }
 
-        function applyRepair(i) {
+        function applyRepair(i, free) {
             const q = shel[i];
-            if (!q || wood <= 0 || q.dur >= SHEL_MAX - 1) return;
-            wood--;
+            if (!q || (!free && wood <= 0) || q.dur >= SHEL_MAX - 1) return false;
+            if (!free) wood--;
             q.dur = Math.min(SHEL_MAX, q.dur + 4);
             sfx('build');
+            return true;
         }
 
         function spawn() {
@@ -2209,6 +2217,7 @@
             pl = [];
             wood = 3;
             scrap = 0;
+            needB = levelNeed();
             radio = 0;
             fire = 60;
             tl = 300;
@@ -2393,23 +2402,23 @@
                 return;
             }
             if (Math.hypot(p.x - RXp, p.y - RYp) < 30 && scrap > 0) {
+                scrap--;
                 if (rem(p)) {
                     send('R');
                     sfx('radio');
                     return;
                 }
-                scrap--;
-                radio = Math.min(100, radio + 12.5);
+                radio = Math.min(100, radio + 100 / needB);
                 sfx('radio');
                 return;
             }
             if (Math.hypot(p.x - CX, p.y - CY) < 30 && wood > 0) {
+                wood--;
                 if (rem(p)) {
                     send('F');
                     snd(120, .25, 'sawtooth', .1, 60);
                     return;
                 }
-                wood--;
                 fire = Math.min(100, fire + 25);
                 snd(120, .25, 'sawtooth', .1, 60);
                 return;
@@ -2417,6 +2426,7 @@
             const q = nearShel(p.x, p.y, 30);
             if (q && wood > 0 && q.dur < SHEL_MAX - 1) {
                 if (rem(p)) {
+                    wood--;
                     send('A ' + shel.indexOf(q));
                     sfx('build');
                     return;
@@ -2618,22 +2628,16 @@
                     if (r && r.on) {
                         r.on = false;
                         r.rs = 35;
-                        r.t ? scrap++ : wood++;
+                        rs(from + ' K ' + (r.t ? 1 : 0) + ' 1');
                     }
                 } else if (c == 'F') {
-                    if (wood > 0) {
-                        wood--;
-                        fire = Math.min(100, fire + 25);
-                    }
+                    fire = Math.min(100, fire + 25);
                 } else if (c == 'R') {
-                    if (scrap > 0) {
-                        scrap--;
-                        radio = Math.min(100, radio + 12.5);
-                    }
+                    radio = Math.min(100, radio + 100 / needB);
                 } else if (c == 'B') {
-                    applyBuild(+a[1], +a[2]);
+                    if (!applyBuild(+a[1], +a[2], true)) rs(from + ' K 0 ' + SHEL_COST);
                 } else if (c == 'A') {
-                    applyRepair(+a[1]);
+                    if (!applyRepair(+a[1], true)) rs(from + ' K 0 1');
                 } else if (c == 'H') {
                     const m = mobs.find(o => o.id == +a[1]);
                     if (m) {
@@ -2644,7 +2648,18 @@
                 return;
             }
             if (c == 'I') myId = +a[1];
-            else if (c == 'GO') newGame(+a[1]);
+            else if (c == 'GO') {
+                newGame(+a[1]);
+                needB = +a[2] || 8;
+            } else if (c == 'K') {
+                if (+a[1] == 1) {
+                    scrap += +a[2];
+                    sfx('scrap');
+                } else {
+                    wood += +a[2];
+                    sfx('chop');
+                }
+            }
             else if (c == 'P') {
                 const p = pl && pl[+a[1]];
                 if (p && p != me) {
@@ -2657,8 +2672,6 @@
                     if (a[8] !== undefined) p.name = decName(a[8]);
                 }
             } else if (c == 'W' && st == 'game') {
-                wood = +a[1];
-                scrap = +a[2];
                 radio = a[3] / 10;
                 fire = +a[4];
                 tl = a[5] / 10;
