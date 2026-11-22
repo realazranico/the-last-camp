@@ -5,10 +5,10 @@ Online game: https://the-last-camp.onrender.com
 
 | | |
 |---|---|
-| Course / subject | [fill in] |
-| Section / group | [fill in] |
+| Course / subject | [OOP 101] |
+| Section / group | [BSIT 2101 GROUP 4] |
 | Members | Sawali, Mia Cassey F; Orozco, Paul Angelo; Sawali, Mia Cassey; Adarlo, Marinela; Paz, Claud Alfred; Dela Roca, Elizabeth Rose Aivy |
-| Date | [fill in] |
+| Date | [DECEMBER 2026] |
 
 ## 1. Overview
 The Last Camp is a survival game based on Philippine folklore. One night in a haunted forest, players must gather wood and batteries, keep a campfire burning, and repair a radio to call for rescue, while four creatures (Manananggal, Kapre, Tikbalang, Multo) hunt them. A Duwende hiding in a punso (earth mound) asks hard questions. The game runs in a web browser (phone and PC) and as a Java desktop program. Both versions can share one online multiplayer room of up to 10 players.
