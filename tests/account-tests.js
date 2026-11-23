@@ -32,7 +32,7 @@ return {
     setRun: (m, t, r, right, gather, hp) => { mode = m; tl = t; radio = r; runRight = right; runGather = gather; me = { hp: hp === undefined ? 5 : hp }; },
     reopen: () => { accts = {}; acct = null; initAccts(); },
     get: () => ({ st, formMsg, formOk, acct, accts, guest, playerName, runInfo }),
-    lvl, ACH, needFor, levelNeed
+    ACH, needFor, levelNeed, curLevel, slashTier, setMpNeed: n => { mpNeed = n; }
 };`;
 
 const g = new Function('crypto', harness)(crypto);
@@ -78,7 +78,8 @@ g.setRun(0, 0, 40, 2, 12);
 g.recordRun(true);
 r = g.get();
 check('score = 300 survived + 300 win + 80 radio + 100 answers + 60 items = 840', r.runInfo.score === 840);
-check('profile shows 1 game, 1 win, 840 XP, level 2', r.acct.games === 1 && r.acct.wins === 1 && r.acct.xp === 840 && g.lvl(r.acct.xp) === 2);
+check('profile shows 1 game, 1 win, 840 total score', r.acct.games === 1 && r.acct.wins === 1 && r.acct.xp === 840);
+check('winning a SOLO game levels up the solo level only (solo 2, bots 1)', r.acct.lvS === 2 && r.acct.lvB === 1 && r.runInfo.up && r.runInfo.need === 10);
 check('achievements FIRST NIGHT, SUNRISE, DUWENDE FRIEND unlocked', r.runInfo.ach.join() === 'FIRST NIGHT,SUNRISE,DUWENDE FRIEND');
 g.setRun(2, 200, 100, 4, 45);
 g.recordRun(true);
@@ -87,13 +88,28 @@ check('winning by radio in multiplayer unlocks RESCUED, DUWENDE SCHOLAR, GATHERE
 g.setRun(0, 0, 0, 0, 0, 0);
 g.recordRun(false);
 check('a lost game still counts as a game played but not a win', g.get().acct.games === 3 && g.get().acct.wins === 2);
+check('a lost game does NOT level you up', g.get().acct.lvS === 2 && g.get().acct.lvB === 1 && g.get().runInfo.up === false);
+check('a multiplayer win does not change any level', (g.setRun(2, 100, 100, 0, 0), g.recordRun(true), g.get().acct.lvS === 2 && g.get().acct.lvB === 1 && g.get().runInfo.level === 0));
 
-console.log('Level and batteries needed for the radio');
+console.log('Levels and batteries needed for the radio');
 check('level 1 needs 8 batteries', g.needFor(1) === 8);
 check('each level up adds 2 batteries (levels 2, 3, 4 need 10, 12, 14)', [2, 3, 4].map(g.needFor).join() === '10,12,14');
 check('the need stops growing at level 8 (22 batteries)', g.needFor(8) === 22 && g.needFor(12) === 22);
-check('your account level sets the need (840 XP = level 2 = 10 batteries)', g.levelNeed() === g.needFor(g.lvl(g.get().acct.xp)));
+g.setRun(0, 0, 0, 0, 0);
+check('SOLO uses the solo level (level 2 needs 10)', g.curLevel() === 2 && g.levelNeed() === 10);
+g.setRun(1, 0, 0, 0, 0);
+check('SOLO + BOTS has its own level (level 1 needs 8)', g.curLevel() === 1 && g.levelNeed() === 8);
+g.setRun(1, 0, 100, 0, 0); g.recordRun(true);
+check('winning SOLO + BOTS raises only the bots level', g.get().acct.lvB === 2 && g.get().acct.lvS === 2);
+g.setRun(2, 0, 0, 0, 0);
+check('MULTIPLAYER ignores levels: the host chooses the batteries (default 8)', g.curLevel() === 1 && g.levelNeed() === 8);
+g.setMpNeed(14);
+check('the host can choose another number of batteries (14)', g.levelNeed() === 14);
+g.setMpNeed(8);
 check('one battery adds 100 / need percent, so the full need always fills the radio', [8, 10, 16, 22].every(n => Math.abs(n * (100 / n) - 100) < 1e-9));
+check('slash upgrades: tier 0 at levels 1-2, tier 1 at 3-4, tier 2 at 5-6, tier 3 from 7 (max)', [1, 2, 3, 4, 5, 6, 7, 20].map(g.slashTier).join() === '0,0,1,1,2,2,3,3');
+for (let i = 0; i < 4; i++) { g.setRun(0, 0, 100, 0, 0); g.recordRun(true); }
+check('SURVIVOR achievement unlocks when a level reaches 5', !!(g.get().acct.ach & (1 << 7)) && g.get().acct.lvS >= 5);
 
 console.log('Update');
 check('invalid new name is rejected', edit('A$', '', 'pass1').formMsg.includes('Name'));

@@ -5,10 +5,10 @@ Online game: https://the-last-camp.onrender.com
 
 | | |
 |---|---|
-| Course / subject | [OOP 101] |
-| Section / group | [BSIT 2101 GROUP 4] |
+| Course / subject | [fill in] |
+| Section / group | [fill in] |
 | Members | Sawali, Mia Cassey F; Orozco, Paul Angelo; Sawali, Mia Cassey; Adarlo, Marinela; Paz, Claud Alfred; Dela Roca, Elizabeth Rose Aivy |
-| Date | [DECEMBER 2026] |
+| Date | [fill in] |
 
 ## 1. Overview
 The Last Camp is a survival game based on Philippine folklore. One night in a haunted forest, players must gather wood and batteries, keep a campfire burning, and repair a radio to call for rescue, while four creatures (Manananggal, Kapre, Tikbalang, Multo) hunt them. A Duwende hiding in a punso (earth mound) asks hard questions. The game runs in a web browser (phone and PC) and as a Java desktop program. Both versions can share one online multiplayer room of up to 10 players.
@@ -32,7 +32,7 @@ The Last Camp is a survival game based on Philippine folklore. One night in a ha
 | Playable game environment | A 64 x 48 tile forest with trees, items, a campfire, a radio, shelters, monsters and punso |
 | Game rules or instructions | HOW TO PLAY (opens automatically the first time), the story intro, the monster introduction, and section 4 of this document |
 | Player controls and interactions | Section 4.2. Keyboard, mouse, touch and on-screen buttons |
-| Score, progress, level or achievement tracking | Score per game, XP, level, 8 achievements, saved in the account (section 4.4) |
+| Score, progress, level or achievement tracking | Score per game, total score, a solo level and a bots level, 8 achievements, saved in the account (section 4.4) |
 | Game over, restart or completion | End screen: RESCUED / YOU SURVIVED / GAME OVER, score, TRY AGAIN, MAIN MENU |
 | Basic input validation and error handling | Section 5.3 |
 | Creative extras | Spectator mode, up to 10 players, 10 characters, Duwende quiz and curse, dash energy bar, map, auto-rotate on phones, cross-play between browser and Java |
@@ -72,14 +72,15 @@ The Last Camp is a survival game based on Philippine folklore. One night in a ha
 | Bag / Map / Settings | I / M / Esc | BAG / MAP / SET |
 
 ### 4.3 Rules
-- Win by surviving until 6:00 AM (the night lasts 5 minutes) or by repairing the radio with batteries. The radio needs 8 batteries at level 1, +2 for every level up (maximum 22 at level 8), so a higher level is harder. In multiplayer the host's level decides.
+- Win by surviving until 6:00 AM (the night lasts 5 minutes) or by repairing the radio with batteries. In SOLO and SOLO + BOTS the radio needs 8 batteries at level 1, +2 for every level up (maximum 22 at level 8), so a higher level is harder. In multiplayer there are no levels: the host chooses how many batteries the radio needs (4 to 24) before hosting.
 - You lose when you run out of hearts. In multiplayer a dead player watches the others; the game only ends when the radio is fixed, sunrise comes, or every player is dead.
-- Trees give wood and battery piles give batteries. In multiplayer, what you pick up is **yours only**: you spend your own wood on the campfire and on shelters, and your own batteries on the radio. The campfire, radio and shelters are shared by everyone. Each wood adds 25 to the campfire, which loses 1.2 per second. Monsters fear fire and shelters.
+- Wood and batteries land in different places in every game (the trees stay the same). Trees give wood and battery piles give batteries. In multiplayer, what you pick up is **yours only**: you spend your own wood on the campfire and on shelters, and your own batteries on the radio. The campfire, radio and shelters are shared by everyone. Each wood adds 25 to the campfire, which loses 1.2 per second. Monsters fear fire and shelters.
+- Kapre and Tikbalang walk around trees by following a path to the nearest player (the same method the bots use) and turn aside if they get jammed. Manananggal and Multo fly, so trees do not stop them.
 - Each of the 6 punso asks one question per player. A right answer gives full health and 10 seconds of protection. A wrong answer is a curse: 2 hearts lost over 5 seconds.
 
 ### 4.4 Score, level and achievements
-- Score of a game = seconds survived (max 300) + 300 if you win + 2 x radio percent + 50 x right Duwende answers + 5 x items gathered.
-- XP is the total of your scores. Level = 1 + XP / 600.
+- Score of a game = seconds survived (max 300) + 300 if you win + 2 x radio percent + 50 x right Duwende answers + 5 x items gathered. All your scores add up to your total score.
+- **Levels:** there are two separate levels, SOLO and SOLO + BOTS, both starting at 1. A level goes up by 1 only when you **win (finish)** a game in that mode. If you lose, the level stays the same. Multiplayer games never change a level.
 - Achievements:
 
 | Achievement | How to unlock |
@@ -91,9 +92,14 @@ The Last Camp is a survival game based on Philippine folklore. One night in a ha
 | DUWENDE SCHOLAR | 5 right Duwende answers in total |
 | GATHERER | Collect 50 items in total |
 | TEAM PLAYER | Finish a multiplayer game |
-| SURVIVOR | Reach level 5 |
+| SURVIVOR | Reach level 5 (solo or bots) |
 
-### 4.5 Account screens
+### 4.5 Skills
+- **SLASH** is the default skill. It gets stronger with your SOLO or BOTS level: tier 1 (levels 3-4) adds range, tier 2 (levels 5-6) adds 1 damage, tier 3 (level 7 and up) adds more range. In multiplayer it stays at the starting strength.
+- **Duwende gift:** a right answer gives one random extra skill for **30 seconds**: POWER SLASH (stronger and wider slash), SWIFT FEET (run 40% faster) or FIRE BURST (press Q or the FIRE button for a fire blast around you, 3 seconds recharge). A timer shows how long it lasts.
+- **Hidden skill:** WHIRLWIND, a spinning attack around you (press Q or the SPIN button, 5 seconds recharge). It is not explained in the game. It unlocks for good (it is saved in your account) when you answer **3 Duwende questions right in one game**. The profile shows `???` until you find it.
+
+### 4.6 Account screens
 | Screen | What you do |
 |---|---|
 | Register | Fill in username, display name, password, repeat password, then CREATE |
@@ -105,7 +111,7 @@ The Last Camp is a survival game based on Philippine folklore. One night in a ha
 
 ## 5. Design of the account system
 ### 5.1 What is stored for each account
-Username, display name, password salt, password hash, XP, games played, wins, best score, longest night, items gathered, right Duwende answers, multiplayer games, achievements (as a number where each bit is one achievement).
+Username, display name, password salt, password hash, total score, solo level, bots level, hidden skill unlocked, games played, wins, best score, longest night, items gathered, right Duwende answers, multiplayer games, achievements (as a number where each bit is one achievement).
 
 ### 5.2 Where it is stored
 | Version | Accounts | Logged-in user | Settings | Solo save |
@@ -151,7 +157,7 @@ Java desktop        --TCP, port 5051---------/
 
 ## 7. Testing
 ### 7.1 Automated tests (browser accounts)
-Run `node tests/account-tests.js`. It loads the real account code from `LastCamp.html` and checks the hashing, register, login, logout, profile, score and achievements, update, delete, guest, and that accounts survive closing and reopening. Result when this document was written: **35 passed, 0 failed**.
+Run `node tests/account-tests.js`. It loads the real account code from `LastCamp.html` and checks the hashing, register, login, logout, profile, score and achievements, update, delete, guest, and that accounts survive closing and reopening. Result when this document was written: **49 passed, 0 failed**.
 
 ### 7.2 Manual test cases (run each in the browser version and in the Java version)
 | No. | Test | Expected result | Browser | Java |
@@ -176,7 +182,12 @@ Run `node tests/account-tests.js`. It loads the real account code from `LastCamp
 | TC-18 | Multiplayer: a player dies | They watch the others; the game goes on | [ ] | [ ] |
 | TC-19 | Multiplayer: two players pick up wood | Each one's wood count goes up only for the player who picked it up | [ ] | [ ] |
 | TC-20 | Multiplayer: a friend puts a battery in the radio | The shared radio bar goes up; your battery count does not change | [ ] | [ ] |
-| TC-21 | Gain a level | Main menu and HUD show the radio needing 2 more batteries | [ ] | [ ] |
+| TC-21 | Win a solo game, then lose another | The solo level goes up by 1 after the win and stays the same after the loss | [ ] | [ ] |
+| TC-22 | Host a multiplayer game and change BATTERIES FOR THE RADIO | The radio shows that number on every player's screen; no level changes | [ ] | [ ] |
+| TC-23 | Start two games in a row | Wood and batteries are in different places each time | [ ] | [ ] |
+| TC-24 | Answer a Duwende question right | A skill timer (30 s) appears and the skill works | [ ] | [ ] |
+| TC-25 | Answer 3 Duwende questions right in one game | HIDDEN SKILL UNLOCKED message; Q / SPIN works; the profile shows WHIRLWIND | [ ] | [ ] |
+| TC-26 | Stand behind a group of trees and wait for a Kapre or Tikbalang | It walks around the trees and reaches you instead of getting stuck | [ ] | [ ] |
 
 The Java version was written to match the browser version but was not compiled or run by the author of this document, so every Java row above must be checked by the team.
 

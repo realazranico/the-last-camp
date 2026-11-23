@@ -220,6 +220,8 @@
         let wood;
         let scrap;
         let needB = 8;
+        let resSeed = 0;
+        let keepSeed = false;
         let radio;
         let fire;
         let tl;
@@ -281,6 +283,9 @@
         let runGather = 0;
         let diedAt = -1;
         let runInfo = null;
+        let mpNeed = 8;
+        let guestHS = false;
+        let runHidden = false;
         const K256 = [];
         for (let n = 2; K256.length < 64; n++) {
             let pr = true;
@@ -333,15 +338,24 @@
         const validUser = u => /^[A-Za-z0-9_]{3,12}$/.test(u);
         const validName = n => /^[A-Za-z0-9 ]{1,12}$/.test(n) && n.trim().length > 0;
         const validPass = p => p.length >= 4 && p.length <= 20;
-        const lvl = xp => 1 + Math.floor(xp / 600);
         // batteries needed to repair the radio: 8 at level 1, +2 for every level up (stops growing at level 8)
         const needFor = l => 8 + 2 * (Math.min(8, l) - 1);
-        const levelNeed = () => needFor(acct ? lvl(acct.xp) : 1);
+        // levels are separate for SOLO and SOLO + BOTS, and only go up when you win. Multiplayer has no levels.
+        const curLevel = () => !acct || mode == 2 ? 1 : (mode == 0 ? acct.lvS : acct.lvB);
+        const levelNeed = () => mode == 2 ? mpNeed : needFor(curLevel());
+        const slashTier = l => Math.min(3, Math.floor((l - 1) / 2));
         const fmtT = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 
         function loadAccts() {
             try {
                 accts = JSON.parse(localStorage.getItem('lcaccts') || '{}') || {};
+                for (const k in accts) {
+                    const a = accts[k];
+                    a.lvS = a.lvS || 1;
+                    a.lvB = a.lvB || 1;
+                    a.hs = a.hs || 0;
+                    a.mp = a.mp || 0;
+                }
             } catch (e) {
                 accts = {};
             }
@@ -400,7 +414,7 @@
             const k = accKey(u);
             if (accts[k]) return formErr('That username is already taken.');
             const salt = newSalt();
-            accts[k] = { u, name: n, salt, hash: hashPw(salt, p), xp: 0, games: 0, wins: 0, best: 0, bestT: 0, gather: 0, right: 0, mp: 0, ach: 0, made: Date.now() };
+            accts[k] = { u, name: n, salt, hash: hashPw(salt, p), xp: 0, lvS: 1, lvB: 1, hs: 0, games: 0, wins: 0, best: 0, bestT: 0, gather: 0, right: 0, mp: 0, ach: 0, made: Date.now() };
             if (!saveAccts()) {
                 delete accts[k];
                 return formErr('Could not save (storage is blocked or full).');
@@ -520,9 +534,9 @@
         function recordRun(w) {
             const survived = (mode == 2 && me && me.hp <= 0 && diedAt >= 0) ? diedAt : Math.max(0, Math.min(300, Math.round(300 - tl)));
             const score = survived + (w ? 300 : 0) + Math.round(Math.max(0, Math.min(100, radio))) * 2 + runRight * 50 + runGather * 5;
-            runInfo = { score, survived, level: 0, up: false, ach: [], saved: true };
+            runInfo = { score, survived, mode, level: 0, up: false, need: 0, ach: [], saved: true, hidden: runHidden };
             if (!acct) return;
-            const a = acct, oldLv = lvl(a.xp);
+            const a = acct;
             a.games++;
             if (w) a.wins++;
             a.xp += score;
@@ -531,6 +545,16 @@
             a.gather += runGather;
             a.right += runRight;
             if (mode == 2) a.mp = (a.mp || 0) + 1;
+            // the level only goes up when you FINISH (win) a solo or solo + bots game. A loss keeps your level.
+            if (mode < 2) {
+                if (w) {
+                    if (mode == 0) a.lvS++;
+                    else a.lvB++;
+                    runInfo.up = true;
+                }
+                runInfo.level = mode == 0 ? a.lvS : a.lvB;
+                runInfo.need = needFor(runInfo.level);
+            }
             const got = [];
             const chk = (i, ok) => {
                 if (ok && !(a.ach & (1 << i))) {
@@ -545,9 +569,7 @@
             chk(4, a.right >= 5);
             chk(5, a.gather >= 50);
             chk(6, (a.mp || 0) >= 1);
-            chk(7, lvl(a.xp) >= 5);
-            runInfo.level = lvl(a.xp);
-            runInfo.up = lvl(a.xp) > oldLv;
+            chk(7, a.lvS >= 5 || a.lvB >= 5);
             runInfo.ach = got;
             runInfo.saved = saveAccts();
         }
@@ -586,27 +608,29 @@
             g.fillStyle = 'rgba(0,0,10,.55)';
             g.fillRect(0, 0, W, H);
             txt('PROFILE', W / 2, 16, 12, '#e8dcb0', 1);
-            const a = acct, lv = lvl(a.xp), into = a.xp % 600;
+            const a = acct;
             const row = (lab, val, y) => {
                 txt(lab, 14, y, 7, '#ffb060');
-                txt(String(val), 84, y, 7, '#e8dcb0');
+                txt(String(val), 92, y, 7, '#e8dcb0');
             };
             row('USERNAME', a.u, 32);
-            row('NAME', a.name, 44);
-            row('LEVEL', 'Lv ' + lv, 56);
-            R('#222', 14, 60, 130, 5);
-            R('#70d070', 14, 60, 130 * into / 600, 5);
-            txt('XP ' + into + ' / 600', 14, 74, 6, '#a0b090');
-            row('GAMES', a.games, 86);
-            row('WINS', a.wins, 98);
-            row('BEST SCORE', a.best, 110);
-            row('LONGEST NIGHT', fmtT(a.bestT), 122);
-            row('ITEMS FOUND', a.gather, 134);
+            row('NAME', a.name, 43);
+            row('SOLO LEVEL', a.lvS, 54);
+            row('BOTS LEVEL', a.lvB, 65);
+            row('GAMES', a.games, 76);
+            row('WINS', a.wins, 87);
+            row('BEST SCORE', a.best, 98);
+            row('LONGEST NIGHT', fmtT(a.bestT), 109);
+            row('ITEMS FOUND', a.gather, 120);
+            row('TOTAL SCORE', a.xp, 131);
+            txt('Win a game to level up.', 14, 142, 6, '#a0b090');
             txt('ACHIEVEMENTS', 160, 32, 8, '#ffb060');
             ACH.forEach((x, i) => {
                 const on = !!(a.ach & (1 << i));
-                txt((on ? '[X] ' : '[ ] ') + x[0] + ' - ' + x[1], 160, 44 + i * 12, 6, on ? '#ffe080' : '#807060');
+                txt((on ? '[X] ' : '[ ] ') + x[0] + ' - ' + x[1], 160, 44 + i * 11, 6, on ? '#ffe080' : '#807060');
             });
+            txt('SLASH  solo Lv ' + (slashTier(a.lvS) + 1) + '   bots Lv ' + (slashTier(a.lvB) + 1), 160, 134, 6, '#c8e8c0');
+            txt('HIDDEN SKILL: ' + (a.hs ? 'WHIRLWIND (key Q)' : '???'), 160, 143, 6, a.hs ? '#ffd070' : '#807060');
             btn('EDIT', 14, 148, 70, 16, () => openForm('edit'));
             btn('LOGOUT', 90, 148, 70, 16, doLogout);
             btn('DELETE', 166, 148, 70, 16, () => openForm('delete'));
@@ -1137,6 +1161,18 @@
                     }
                 }
             });
+            for (const f of fxs) L.push({
+                y: f.y,
+                f: () => {
+                    const x = f.x - cx | 0, y = f.y - cy | 0, k = 1 - f.t / .35;
+                    g.strokeStyle = f.k == 'burst' ? 'rgba(255,140,40,' + (1 - k) + ')' : 'rgba(200,230,255,' + (1 - k) + ')';
+                    g.lineWidth = 3;
+                    g.beginPath();
+                    g.ellipse(x, y - 6, f.r * k, f.r * k * .7, 0, 0, 7);
+                    g.stroke();
+                    g.lineWidth = 1;
+                }
+            });
             for (const pq of punso) L.push({
                 y: pq.y,
                 f: () => {
@@ -1234,6 +1270,7 @@
         }
 
         function hud() {
+            if (skill) txt(skill.name + ' ' + Math.ceil(skill.t) + 's', W / 2, 32, 7, '#ffd070', 1);
             if (me.curse > 0) {
                 g.fillStyle = 'rgba(140,50,200,' + (.13 + .06 * Math.sin(gt * 10)) + ')';
                 g.fillRect(0, 0, W, H);
@@ -1296,6 +1333,11 @@
                 btn('DASH', 262, 104, 52, 26, () => dash(me));
                 R('#222', 262, 98, 52, 4);
                 R(me.dCd > 0 ? '#e0c040' : '#40e060', 262, 98, 52 * (me.dCd > 0 ? Math.max(0, 1 - me.dCd / 2.5) : 1), 4);
+                if ((skill && skill.id == 'burst') || hasHidden()) {
+                    btn(skill && skill.id == 'burst' ? 'FIRE' : 'SPIN', 262, 66, 52, 26, useSkill);
+                    R('#222', 262, 60, 52, 4);
+                    R(sCd > 0 ? '#e0c040' : '#40e060', 262, 60, 52 * (sCd > 0 ? Math.max(0, 1 - sCd / sCdMax) : 1), 4);
+                }
                 btn('USE', 204, 146, 50, 24, () => act(me));
                 btn('BUILD', 204, 116, 50, 24, () => build(me));
             }
@@ -1416,12 +1458,13 @@
         }
 
         const INSTR = [
-            ['THE GOAL', 'You are lost in a forest at night.', '', 'WIN  Survive until sunrise (6:00 AM)', '     OR repair the radio with batteries:', '     8 at level 1, +2 per level up.', 'LOSE If the monsters get you.', '', 'The night lasts about 5 minutes.'],
+            ['THE GOAL', 'You are lost in a forest at night.', '', 'WIN  Survive until sunrise (6:00 AM)', '     OR repair the radio with batteries:', '     8 at level 1 (solo), +2 per level.', 'LOSE If the monsters get you.', '', 'The night lasts about 5 minutes.', 'Online: the host picks the batteries.'],
             ['CONTROLS (PHONE)', 'MOVE    drag on the left side of screen', 'SLASH   hit monsters near you', 'DASH    quick burst of speed', 'USE     pick up / feed fire / fix radio', 'BUILD   build a shelter in front of you', 'BAG     your items and torch', 'MAP     see where items are', 'SET     music, sound, fullscreen'],
             ['CONTROLS (PC)', 'MOVE    W A S D', 'SLASH   SPACE', 'DASH    SHIFT', 'USE      E', 'BUILD    B', 'TORCH    F', 'MAP      M'],
             ['WHAT TO DO', '1. Walk to a tree. Press USE to get WOOD.', '2. Walk to a battery pile. USE to get', '   BATTERIES (yours, not shared online).', '3. Stand at the campfire. USE to add wood.', '   The fire slowly dies. Keep it alive!', '4. Stand at the radio. USE to add a', '   battery. Level 1 needs 8, +2/level.', '5. BUILD a shelter (costs 6 wood).'],
             ['SURVIVAL TIPS', 'Monsters fear FIRE. Stay near the fire.', 'Shelters keep monsters away. Monsters', 'damage them, so fix them with wood.', 'Manananggal flies. Kapre is tough.', 'Tikbalang charges. Multo floats through', 'trees. SLASH and DASH to stay alive.', 'Multiplayer: host shares the 4-letter', 'code. Friends enter it under JOIN.'],
-            ['THE DUWENDE', 'Brown mounds with a ? are PUNSO homes.', 'Step on one and a DUWENDE pops out', 'and asks you a HARD question.', '', 'RIGHT: full health + 10 seconds safe.', 'WRONG: CURSE! -2 hearts in 5 seconds.', 'Each punso asks only once per player.', 'Say TABI-TABI PO as you pass!']
+            ['THE DUWENDE', 'Brown mounds with a ? are PUNSO homes.', 'Step on one and a DUWENDE pops out', 'and asks you a HARD question.', '', 'RIGHT: full health, 10 s safe, a skill.', 'WRONG: CURSE! -2 hearts in 5 seconds.', 'Each punso asks only once per player.', 'Say TABI-TABI PO as you pass!'],
+            ['SKILLS', 'SLASH is your main skill.', 'In solo and solo + bots it gets stronger', 'as your level goes up.', '', 'Duwende gift (right answer): one extra', 'skill for 30 seconds: POWER SLASH,', 'SWIFT FEET or FIRE BURST (press Q).', 'Some skills are hidden. Can you find one?']
         ];
 
         function confirmName() {
@@ -1521,7 +1564,7 @@
                 txt('HOME', 126, 100, 7, '#ffb060');
                 txt('Punso mound (brown, with ?)', 160, 100, 7, '#e8dcb0');
                 txt('RIGHT', 126, 110, 7, '#80ff80');
-                txt('Full health + 10 s safe', 160, 110, 7, '#e8dcb0');
+                txt('Heal, 10 s safe, 30 s skill', 160, 110, 7, '#e8dcb0');
                 txt('WRONG', 126, 120, 7, '#ff6060');
                 txt('CURSE: -2 hearts in 5 s', 160, 120, 7, '#e8dcb0');
             } else {
@@ -1713,7 +1756,7 @@
             } else if (st == 'mode') {
                 backdrop();
                 txt('MAIN MENU', W / 2, 26, 14, '#e8dcb0', 1);
-                txt(acct ? acct.name + '  -  Level ' + lvl(acct.xp) + '  -  radio needs ' + levelNeed() + ' batteries' : (playerName || 'GUEST') + '  -  guest  -  radio needs 8 batteries', W / 2, 40, 7, '#c8b890', 1);
+                txt(acct ? acct.name + '  -  Solo Lv ' + acct.lvS + '  -  Bots Lv ' + acct.lvB : (playerName || 'GUEST') + '  -  guest (no levels, progress is not saved)', W / 2, 40, 7, '#c8b890', 1);
                 if (panel == 2) {
                     TX.length = 0;
                     g.fillStyle = 'rgba(0,0,0,.6)';
@@ -1787,22 +1830,26 @@
                 g.fillStyle = 'rgba(0,0,0,.45)';
                 g.fillRect(0, 0, W, H);
                 txt('MULTIPLAYER', W / 2, 22, 14, '#e8dcb0', 1);
-                R('#150d0b', 20, 30, 130, 84);
-                R('#150d0b', 170, 30, 130, 84);
+                R('#150d0b', 20, 30, 130, 112);
+                R('#150d0b', 170, 30, 130, 112);
                 g.strokeStyle = '#604030';
-                g.strokeRect(20.5, 30.5, 129, 83);
-                g.strokeRect(170.5, 30.5, 129, 83);
-                txt('HOST A GAME', 85, 44, 9, '#ffb060', 1);
-                txt('HOW MANY PLAYERS?', 85, 60, 7, '#d0c0a0', 1);
-                btn('-', 40, 66, 16, 16, () => nP = Math.max(2, nP - 1));
-                txt('' + nP, 85, 79, 12, '#fff', 1);
-                btn('+', 114, 66, 16, 16, () => nP = Math.min(10, nP + 1));
-                btn('HOST', 45, 90, 80, 20, () => connect('HOST ' + nP));
-                txt('JOIN A GAME', 235, 44, 9, '#ffb060', 1);
+                g.strokeRect(20.5, 30.5, 129, 111);
+                g.strokeRect(170.5, 30.5, 129, 111);
+                txt('HOST A GAME', 85, 43, 9, '#ffb060', 1);
+                txt('HOW MANY PLAYERS?', 85, 56, 7, '#d0c0a0', 1);
+                btn('-', 40, 60, 16, 14, () => nP = Math.max(2, nP - 1));
+                txt('' + nP, 85, 72, 12, '#fff', 1);
+                btn('+', 114, 60, 16, 14, () => nP = Math.min(10, nP + 1));
+                txt('BATTERIES FOR THE RADIO', 85, 88, 7, '#d0c0a0', 1);
+                btn('-', 40, 92, 16, 14, () => mpNeed = Math.max(4, mpNeed - 1));
+                txt('' + mpNeed, 85, 104, 12, '#fff', 1);
+                btn('+', 114, 92, 16, 14, () => mpNeed = Math.min(24, mpNeed + 1));
+                btn('HOST', 45, 114, 80, 20, () => connect('HOST ' + nP));
+                txt('JOIN A GAME', 235, 43, 9, '#ffb060', 1);
                 txt('ROOM CODE FROM THE HOST', 235, 60, 7, '#d0c0a0', 1);
-                fa = { id: 'code', x: 200, y: 64, w: 70, h: 20, max: 4, ph: 'CODE', get: () => joinCode };
-                btn('JOIN', 195, 90, 80, 20, joinGame);
-                wrapTxt(netMsg, W / 2, 134, 7, '#ff6060', 44);
+                fa = { id: 'code', x: 200, y: 66, w: 70, h: 20, max: 4, ph: 'CODE', get: () => joinCode };
+                btn('JOIN', 195, 114, 80, 20, joinGame);
+                wrapTxt(netMsg, W / 2, 152, 7, '#ff6060', 44);
                 btn('BACK', 10, 154, 40, 16, () => {
                     closeNet();
                     st = 'char';
@@ -1817,7 +1864,8 @@
                     txt('Players: ' + (joined + 1) + ' / ' + nP, W / 2, 112, 10, '#fff', 1);
                     if (joined > 0) btn('START', 130, 124, 60, 20, () => {
                         const n = 1 + Math.max(joined, ...lobbyIds);
-                        send('GO ' + n + ' ' + levelNeed());
+                        resSeed = Math.random() * 1e9 | 0;
+                        send('GO ' + n + ' ' + mpNeed + ' ' + resSeed);
                         newGame(n);
                         for (let i = 1; i < n; i++) if (!lobbyIds.has(i)) {
                             pl[i].hp = 0;
@@ -1851,7 +1899,7 @@
                 if (runInfo) {
                     txt('SCORE ' + runInfo.score + '    TIME ' + fmtT(runInfo.survived), W / 2, 112, 9, '#ffe080', 1);
                     if (acct) {
-                        txt('LEVEL ' + runInfo.level + (runInfo.up ? ' UP! Radio now needs ' + needFor(runInfo.level) + ' batteries' : '') + '    +' + runInfo.score + ' XP', W / 2, 123, 7, '#c8e8c0', 1);
+                        txt(runInfo.mode == 2 ? 'Multiplayer does not change your level.' : (runInfo.mode == 0 ? 'SOLO' : 'BOTS') + ' LEVEL ' + runInfo.level + (runInfo.up ? ' UP! Radio now needs ' + runInfo.need + ' batteries' : '  (same level: win a game to level up)'), W / 2, 123, 7, runInfo.up ? '#c8e8c0' : '#c8b890', 1);
                         if (runInfo.ach.length) txt('NEW: ' + runInfo.ach.join(', '), W / 2, 132, 7, '#ffd070', 1);
                         if (!runInfo.saved) txt('Could not save your progress (storage blocked).', W / 2, 132, 7, '#ff6060', 1);
                     } else txt('Log in to save your score and level.', W / 2, 123, 7, '#a09080', 1);
@@ -1907,6 +1955,68 @@
             }
         }
 
+        // ===== Skills: SLASH is the default. A right Duwende answer gives an extra skill for 30 seconds. One skill is hidden. =====
+        let skill = null;
+        let sCd = 0;
+        let sCdMax = 1;
+        let fxs = [];
+        const SKILLS = [
+            { id: 'power', name: 'POWER SLASH' },
+            { id: 'swift', name: 'SWIFT FEET' },
+            { id: 'burst', name: 'FIRE BURST' }
+        ];
+        const hasHidden = () => acct ? !!acct.hs : guestHS;
+
+        // slash gets stronger as your SOLO / BOTS level goes up (it stays at the start level in multiplayer)
+        function slashStats(p) {
+            if (p != me) return { dmg: 2, range: 30, arc: 1.2 };
+            const t = slashTier(curLevel());
+            let dmg = 2 + (t >= 2 ? 1 : 0), range = 30 + 4 * t, arc = 1.2;
+            if (skill && skill.id == 'power') {
+                dmg += 1;
+                range += 10;
+                arc = 1.7;
+            }
+            return { dmg, range, arc };
+        }
+
+        function unlockHidden() {
+            runHidden = true;
+            if (acct) {
+                acct.hs = 1;
+                saveAccts();
+            } else guestHS = true;
+            say('HIDDEN SKILL UNLOCKED: WHIRLWIND! Press Q.');
+            snd(520, .6, 'triangle', .22, 1040);
+        }
+
+        function doArea(kind, r, dmg, push, cd) {
+            sCd = cd;
+            sCdMax = cd;
+            me.atkT = .25;
+            snd(kind == 'burst' ? 150 : 700, .25, kind == 'burst' ? 'sawtooth' : 'triangle', .15, kind == 'burst' ? 500 : 250);
+            fxs.push({ x: me.x, y: me.y, r, t: .35, k: kind });
+            for (const m of [...mobs]) {
+                if (Math.hypot(m.x - me.x, m.y - me.y - 6) < r) {
+                    if (rem(me)) {
+                        send('H ' + m.id + ' ' + dmg);
+                        continue;
+                    }
+                    m.hp -= dmg;
+                    const a = Math.atan2(m.y - me.y, m.x - me.x);
+                    m.x += Math.cos(a) * push;
+                    m.y += Math.sin(a) * push;
+                    if (m.hp <= 0) mobs.splice(mobs.indexOf(m), 1);
+                }
+            }
+        }
+
+        function useSkill() {
+            if (me.hp <= 0 || quest || sCd > 0) return;
+            if (skill && skill.id == 'burst') doArea('burst', 54, 2, 16, 3);
+            else if (hasHidden()) doArea('spin', 40, 3, 12, 5);
+        }
+
         function startQuest(k) {
             const d = QUIZ[Math.random() * QUIZ.length | 0];
             const opts = d[1].map((t, i) => ({ t, ok: i == d[2] }));
@@ -1929,7 +2039,10 @@
                 runRight++;
                 me.hp = 5;
                 me.hurt = Math.max(me.hurt, 10);
-                say('Salamat po! The Duwende blessed you.');
+                const sk = SKILLS[Math.random() * SKILLS.length | 0];
+                skill = { id: sk.id, name: sk.name, t: 30 };
+                say('Salamat po! You got ' + sk.name + ' for 30 s.');
+                if (runRight >= 3 && !hasHidden()) unlockHidden();
                 snd(660, .3, 'triangle', .2, 990);
             } else {
                 me.curse = 5;
@@ -1969,10 +2082,16 @@
                     map[y][x] = v;
                 }
             }
-            for (let i = 0; i < 70; i++) {
-                const x = 1 + r.nextInt(MW - 2);
-                const y = 1 + r.nextInt(MH - 2);
-                if (!map[y][x] && Math.hypot(x - MW / 2, y - MH / 2) > 6) res.push({ x: x * T + 8, y: y * T + 12, t: i % 3 == 0 ? 1 : 0, on: true, rs: 0 });
+            // wood and batteries land in new places every game (the trees stay the same)
+            const rr = new JR(resSeed);
+            let n = 0;
+            while (n < 70) {
+                const x = 1 + rr.nextInt(MW - 2);
+                const y = 1 + rr.nextInt(MH - 2);
+                if (!map[y][x] && Math.hypot(x - MW / 2, y - MH / 2) > 6) {
+                    res.push({ x: x * T + 8, y: y * T + 12, t: n % 3 == 0 ? 1 : 0, on: true, rs: 0 });
+                    n++;
+                }
             }
             genPunso();
             buildMaps();
@@ -2072,6 +2191,14 @@
             sfx(MSND[m.t], .6);
         }
 
+        // walking monsters (Kapre, Tikbalang) are bigger than a player, so they test a wider box
+        const mBlk = (x, y) => solid(x - 5, y) || solid(x + 5, y) || solid(x, y - 3) || solid(x, y + 3);
+        const mClear = (x0, y0, x1, y1) => {
+            const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 4);
+            for (let i = 1; i <= n; i++) if (mBlk(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n)) return false;
+            return true;
+        };
+
         function mobAI(m, dt) {
             let t = null;
             let bd = 1e9;
@@ -2097,6 +2224,35 @@
                 m.ch -= dt;
                 if (m.ch < -4) m.ch = 1;
                 if (m.ch > 0) sp *= 2.8;
+            }
+            if (m.t == 1 || m.t == 2) {
+                // walkers go around trees like the bots do: follow a path when a tree is in the way
+                const fleeing = Math.hypot(m.x - CX, m.y - CY) < frad() || nearShel(m.x, m.y, 34);
+                if (!fleeing && !mClear(m.x, m.y, t.x, t.y)) {
+                    m.pT = (m.pT || 0) - dt;
+                    if (m.wp && Math.hypot(m.wp[0] - m.x, m.wp[1] - m.y) < 5) m.pT = 0;
+                    if (m.pT <= 0 || !m.wp) {
+                        m.pT = .35 + Math.random() * .15;
+                        const st = pathStep(m.x / T | 0, (m.y - 1) / T | 0, t.x / T | 0, (t.y - 1) / T | 0);
+                        m.wp = st ? [st[0] * T + T / 2, st[1] * T + T / 2] : null;
+                    }
+                    if (m.wp) a = Math.atan2(m.wp[1] - m.y, m.wp[0] - m.x);
+                } else m.wp = null;
+                // if it still gets jammed (stops moving), turn aside for a moment to shake loose
+                m.sk = (m.sk || 0) + dt;
+                m.jit = (m.jit || 0) - dt;
+                if (m.sk > .6) {
+                    if (m.lx !== undefined && Math.hypot(m.x - m.lx, m.y - m.ly) < 2.5) {
+                        m.jit = .5;
+                        m.jaw = (Math.random() < .5 ? 1 : -1) * (1.2 + Math.random() * .6);
+                        m.wp = null;
+                        m.pT = 0;
+                    }
+                    m.lx = m.x;
+                    m.ly = m.y;
+                    m.sk = 0;
+                }
+                if (m.jit > 0) a += m.jaw;
             }
             let vx = Math.cos(a) * sp * dt;
             let vy = Math.sin(a) * sp * dt;
@@ -2212,6 +2368,8 @@
         }
 
         function newGame(n) {
+            if (mode != 2 && !keepSeed) resSeed = Math.random() * 1e9 | 0;
+            keepSeed = false;
             gen();
             mobs = [];
             pl = [];
@@ -2229,6 +2387,10 @@
             runRight = 0;
             runGather = 0;
             diedAt = -1;
+            runHidden = false;
+            skill = null;
+            sCd = 0;
+            fxs = [];
             // each bot is a different character (never the same as yours or each other)
             const pick = [];
             for (let c = 0; c < NAMES.length; c++) if (c != ch) pick.push(c);
@@ -2269,6 +2431,7 @@
                     mode,
                     ch,
                     wood,
+                    seed: resSeed,
                     scrap,
                     radio,
                     fire,
@@ -2289,6 +2452,8 @@
                 mode = s.mode;
                 ch = s.ch;
                 myId = 0;
+                resSeed = s.seed || 0;
+                keepSeed = true;
                 newGame(mode == 1 ? 4 : 1);
                 wood = s.wood;
                 scrap = s.scrap;
@@ -2348,18 +2513,19 @@
         function slash(p) {
             if (p.hp <= 0 || (quest && p == me)) return;
             if (p.atkCd > 0) return;
+            const sd = slashStats(p);
             p.atkCd = .4;
             p.atkT = .15;
             if (p == me) snd(900, .1, 'sawtooth', .08, 200);
             for (const m of [...mobs]) {
                 const dx = m.x - p.x;
                 const dy = m.y - p.y - 6;
-                if (Math.hypot(dx, dy) < 30 && Math.abs(ang(Math.atan2(dy, dx), p.face)) < 1.2) {
+                if (Math.hypot(dx, dy) < sd.range && Math.abs(ang(Math.atan2(dy, dx), p.face)) < sd.arc) {
                     if (rem(p)) {
-                        send('H ' + m.id + ' 2');
+                        send('H ' + m.id + ' ' + sd.dmg);
                         continue;
                     }
-                    m.hp -= 2;
+                    m.hp -= sd.dmg;
                     const a = Math.atan2(m.y - p.y, m.x - p.x);
                     m.x += Math.cos(a) * 10;
                     m.y += Math.sin(a) * 10;
@@ -2478,7 +2644,7 @@
                 me.mv = 1;
             } else if (me.mv) {
                 me.face = Math.atan2(iy, ix);
-                mv(me, ix * 62 * dt, iy * 62 * dt);
+                mv(me, ix * 62 * (skill && skill.id == 'swift' ? 1.4 : 1) * dt, iy * 62 * (skill && skill.id == 'swift' ? 1.4 : 1) * dt);
             }
             stepT -= dt;
             if (me.mv && me.dT <= 0 && stepT <= 0) {
@@ -2494,6 +2660,16 @@
                     }
                 }
             }
+            if (skill) {
+                skill.t -= dt;
+                if (skill.t <= 0) {
+                    say('The Duwende skill wore off.');
+                    skill = null;
+                }
+            }
+            if (sCd > 0) sCd -= dt;
+            for (const f of fxs) f.t -= dt;
+            fxs = fxs.filter(f => f.t > 0);
             if (me.curse > 0 && me.hp > 0) {
                 const cd = Math.min(me.curse, dt);
                 me.curse -= cd;
@@ -2649,6 +2825,7 @@
             }
             if (c == 'I') myId = +a[1];
             else if (c == 'GO') {
+                resSeed = +a[3] || 0;
                 newGame(+a[1]);
                 needB = +a[2] || 8;
             } else if (c == 'K') {
@@ -3011,6 +3188,7 @@
                 if (k == 'shift' || k == 'k') dash(me);
                 if (k == 'f') flash = !flash;
                 if (k == 'b') build(me);
+                if (k == 'q') useSkill();
                 if (k == 'i' && !quest) panel = panel == 1 ? 0 : 1;
                 if (k == 'm' && !quest) panel = panel == 3 ? 0 : 3;
                 if (k == 'escape' && !quest) panel = panel ? 0 : 2;
