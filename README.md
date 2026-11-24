@@ -99,9 +99,9 @@ CONTRIBUTING.md          team workflow and commit guide
 ## Team
 | Member | Role | Responsibility |
 |---|---|---|
-| Sawali, Mia Cassey F | Project Leader / Game Designer | Project planning, game concept, task coordination |
+| Sawali, Mia Cassey F. | Project Leader / Game Designer | Project planning, game concept, task coordination |
 | Orozco, Paul Angelo | Java / OOP Developer | Java classes, OOP structure, core game logic |
-| Sawali, Mia Cassey | Gameplay Developer | Game mechanics, player controls, scoring and interactions |
+| Sawali, Mia Cassey F. | Gameplay Developer | Game mechanics, player controls, scoring and interactions |
 | Adarlo, Marinela | Account Management Developer | Registration, login, CRUD, local file handling |
 | Paz, Claud Alfred | UI/UX Designer | Game interface, menus, visual design, player experience |
 | Dela Roca, Elizabeth Rose Aivy | QA Tester / Documentation Lead | Functional testing, test cases, documentation |
