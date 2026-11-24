@@ -194,11 +194,11 @@ The Java version was written to match the browser version but was not compiled o
 ## 8. Team and contributions
 | Member | Role | Responsibility | Contributions and commits |
 |---|---|---|---|
-| Sawali, Mia Cassey F | Project Leader / Game Designer | Project planning, game concept, task coordination | [fill in] |
-| Orozco, Paul Angelo | Java / OOP Developer | Java classes, OOP structure, core game logic | [fill in] |
-| Sawali, Mia Cassey | Gameplay Developer | Game mechanics, player controls, scoring and interactions | [fill in] |
-| Adarlo, Marinela | Account Management Developer | Registration, login, CRUD, local file handling | [fill in] |
-| Paz, Claud Alfred | UI/UX Designer | Game interface, menus, visual design, player experience | [fill in] |
-| Dela Roca, Elizabeth Rose Aivy | QA Tester / Documentation Lead | Functional testing, test cases, documentation | [fill in] |
+| Sawali, Mia Cassey F | Project Leader / Game Designer | Project planning, game concept, task coordination | 
+| Orozco, Paul Angelo | Java / OOP Developer | Java classes, OOP structure, core game logic | 
+| Sawali, Mia Cassey | Gameplay Developer | Game mechanics, player controls, scoring and interactions | 
+| Adarlo, Marinela | Account Management Developer | Registration, login, CRUD, local file handling | 
+| Paz, Claud Alfred | UI/UX Designer | Game interface, menus, visual design, player experience | 
+| Dela Roca, Elizabeth Rose Aivy | QA Tester / Documentation Lead | Functional testing, test cases, documentation | 
 
 See CONTRIBUTING.md for how every member should commit their own work so the history shows who did what.
