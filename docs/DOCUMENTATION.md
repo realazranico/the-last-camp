@@ -5,10 +5,10 @@ Online game: https://the-last-camp.onrender.com
 
 | | |
 |---|---|
-| Course / subject | [ OOP 101 |
-| Section / group | 2101 - GROUP 4 |
+| Course / subject | [fill in] |
+| Section / group | [fill in] |
 | Members | Sawali, Mia Cassey F; Orozco, Paul Angelo; Sawali, Mia Cassey; Adarlo, Marinela; Paz, Claud Alfred; Dela Roca, Elizabeth Rose Aivy |
-| Date | DECEMBER 2026 |
+| Date | [fill in] |
 
 ## 1. Overview
 The Last Camp is a survival game based on Philippine folklore. One night in a haunted forest, players must gather wood and batteries, keep a campfire burning, and repair a radio to call for rescue, while four creatures (Manananggal, Kapre, Tikbalang, Multo) hunt them. A Duwende hiding in a punso (earth mound) asks hard questions. The game runs in a web browser (phone and PC) and as a Java desktop program. Both versions can share one online multiplayer room of up to 10 players.
@@ -194,11 +194,11 @@ The Java version was written to match the browser version but was not compiled o
 ## 8. Team and contributions
 | Member | Role | Responsibility | Contributions and commits |
 |---|---|---|---|
-| Sawali, Mia Cassey F | Project Leader / Game Designer | Project planning, game concept, task coordination | 
-| Orozco, Paul Angelo | Java / OOP Developer | Java classes, OOP structure, core game logic | 
-| Sawali, Mia Cassey | Gameplay Developer | Game mechanics, player controls, scoring and interactions | 
-| Adarlo, Marinela | Account Management Developer | Registration, login, CRUD, local file handling | 
-| Paz, Claud Alfred | UI/UX Designer | Game interface, menus, visual design, player experience |
-| Dela Roca, Elizabeth Rose Aivy | QA Tester / Documentation Lead | Functional testing, test cases, documentation | 
+| Sawali, Mia Cassey F | Project Leader / Game Designer | Project planning, game concept, task coordination | [fill in] |
+| Orozco, Paul Angelo | Java / OOP Developer | Java classes, OOP structure, core game logic | [fill in] |
+| Sawali, Mia Cassey | Gameplay Developer | Game mechanics, player controls, scoring and interactions | [fill in] |
+| Adarlo, Marinela | Account Management Developer | Registration, login, CRUD, local file handling | [fill in] |
+| Paz, Claud Alfred | UI/UX Designer | Game interface, menus, visual design, player experience | [fill in] |
+| Dela Roca, Elizabeth Rose Aivy | QA Tester / Documentation Lead | Functional testing, test cases, documentation | [fill in] |
 
 See CONTRIBUTING.md for how every member should commit their own work so the history shows who did what.
