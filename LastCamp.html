@@ -2323,13 +2323,26 @@
                 if (low || (fire < 35 && wood > 0)) { tx = CX; ty = CY; go = 1; }
                 else if (scrap > 0) { tx = RXp; ty = RYp; go = 1; }
                 else {
-                    let rd = 1e9;
-                    res.forEach((q, i) => {
-                        if (!q.on || (b.ban[i] || 0) > gt) return;
-                        const dd = Math.hypot(q.x - b.x, q.y - b.y) + (q.t ? -80 : 0) + b.id * 37 % 50;
-                        if (dd < rd) { rd = dd; ri = i; }
-                    });
+                    // every bot keeps its own target and its own part of the forest, so they spread out
+                    const mates = pl.filter(q => q.bot && q != b && q.hp > 0);
+                    const all = pl.filter(q => q.bot);
+                    const home = all.indexOf(b) / Math.max(1, all.length) * Math.PI * 2 + b.id * .7;
+                    const keep = b.tgt !== undefined && b.tgt >= 0 && res[b.tgt] && res[b.tgt].on && (b.ban[b.tgt] || 0) <= gt && !mates.some(q => q.tgt === b.tgt);
+                    if (keep) ri = b.tgt;
+                    else {
+                        let rd = 1e9;
+                        res.forEach((q, i) => {
+                            if (!q.on || (b.ban[i] || 0) > gt) return;
+                            let dd = Math.hypot(q.x - b.x, q.y - b.y) + (q.t ? -80 : 0);
+                            const da = Math.abs(Math.atan2(Math.sin(Math.atan2(q.y - CY, q.x - CX) - home), Math.cos(Math.atan2(q.y - CY, q.x - CX) - home)));
+                            dd += da * 70;
+                            if (mates.some(o => o.tgt === i)) dd += 1500;
+                            if (dd < rd) { rd = dd; ri = i; }
+                        });
+                        b.tgt = ri;
+                    }
                     if (ri >= 0) { tx = res[ri].x; ty = res[ri].y; go = 1; }
+                    else b.tgt = -1;
                 }
             }
             b.mv = 0;
@@ -2353,7 +2366,15 @@
             let a = Math.atan2(wy - b.y, wx - b.x);
             if (b.jit > 0) a += b.jaw;
             if (!tm) b.face = a;
-            mv(b, Math.cos(a) * 48 * dt, Math.sin(a) * 48 * dt);
+            // push away from other bots so they do not walk in one pack
+            let vx = Math.cos(a), vy = Math.sin(a);
+            for (const o of pl) {
+                if (!o.bot || o == b || o.hp <= 0) continue;
+                const od = Math.hypot(b.x - o.x, b.y - o.y);
+                if (od < 22 && od > .01) { vx += (b.x - o.x) / od * .9; vy += (b.y - o.y) / od * .9; }
+            }
+            const vl = Math.hypot(vx, vy) || 1;
+            mv(b, vx / vl * 48 * dt, vy / vl * 48 * dt);
             b.mv = 1;
             if (b.stk > .7) {
                 if (b.lx !== undefined && Math.hypot(b.x - b.lx, b.y - b.ly) < 4) {
